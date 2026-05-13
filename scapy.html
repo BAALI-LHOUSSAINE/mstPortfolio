@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse Réseau : Sockets & Sniffing avec Scapy — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="article.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv" class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html" class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+
+<!-- Reading progress indicator -->
+<div class="reading-progress-wrap">
+    <div class="reading-progress-bar" id="readingProgress"></div>
+</div>
+
+<!-- ===================== ARTICLE HERO ===================== -->
+<header class="article-hero">
+    <div class="container">
+        <div class="article-breadcrumb">
+            <a href="articles.html"><i class="fas fa-arrow-left"></i> Articles</a>
+            <span class="bc-sep">/</span>
+            <span>Sécurité Réseau</span>
+        </div>
+
+        <div class="article-hero-meta">
+            <span class="acf-tag web"><i class="fas fa-network-wired"></i> Sécurité Réseau</span>
+            <span class="acf-tag crypto"><i class="fas fa-search"></i> Scapy</span>
+            <span class="article-hero-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+            <span class="article-hero-read"><i class="fas fa-clock"></i> ~18 min de lecture</span>
+        </div>
+
+        <h1 class="article-hero-title glitch" data-text="Analyse Réseau">
+            Analyse Réseau
+        </h1>
+        <h2 class="article-hero-subtitle">Sockets TCP & Sniffing de paquets avec Scapy</h2>
+
+        <p class="article-hero-desc">
+            Comprendre en profondeur comment les communications réseau fonctionnent au niveau des sockets,
+            comment capturer et analyser les paquets TCP en temps réel avec Scapy, et interpréter
+            le three-way handshake à travers une implémentation concrète en Python.
+        </p>
+
+        <div class="article-hero-topics">
+            <span class="acf-topic">TCP/IP</span>
+            <span class="acf-topic">Sockets Python</span>
+            <span class="acf-topic">Scapy</span>
+            <span class="acf-topic">Packet Sniffing</span>
+            <span class="acf-topic">Three-way Handshake</span>
+            <span class="acf-topic">Flags TCP</span>
+            <span class="acf-topic">Analyse réseau</span>
+        </div>
+
+        <div class="article-author-bar">
+            <div class="author-avatar">BL</div>
+            <div>
+                <p class="author-name">Baali Lhoussaine</p>
+                <p class="author-role">Master Cryptologie & Sécurité Informatique — FST Al Hoceima</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc-sticky" id="toc">
+    <div class="container">
+        <div class="toc-inner">
+            <span class="toc-label">// SOMMAIRE</span>
+            <nav class="toc-nav">
+                <a href="#intro" class="toc-link active">Introduction</a>
+                <a href="#modele-tcp" class="toc-link">Modèle TCP/IP</a>
+                <a href="#sockets" class="toc-link">Sockets Python</a>
+                <a href="#handshake" class="toc-link">Three-way Handshake</a>
+                <a href="#scapy" class="toc-link">Scapy & Sniffing</a>
+                <a href="#implementation" class="toc-link">Implémentation</a>
+                <a href="#analyse" class="toc-link">Analyse des paquets</a>
+                <a href="#conclusion" class="toc-link">Conclusion</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ARTICLE BODY ===================== -->
+<main class="article-body">
+    <div class="container">
+        <div class="article-layout">
+
+            <!-- MAIN CONTENT -->
+            <article class="article-content">
+
+                <!-- INTRO -->
+                <section id="intro" class="article-section">
+                    <div class="section-label">// 01 — INTRODUCTION</div>
+                    <h2>Pourquoi analyser le trafic réseau ?</h2>
+
+                    <p>
+                        Dans le domaine de la sécurité informatique, comprendre les communications réseau à bas niveau est une compétence fondamentale.
+                        Que l'on soit administrateur système, analyste SOC, pentesteur ou simple développeur curieux, savoir
+                        <strong>capturer</strong>, <strong>inspecter</strong> et <strong>interpréter</strong> les paquets qui transitent
+                        sur un réseau est indispensable.
+                    </p>
+
+                    <p>
+                        Cet article explore deux axes complémentaires : d'abord la programmation de sockets TCP en Python pour
+                        établir des communications réseau, puis l'utilisation de <strong>Scapy</strong> — une puissante bibliothèque Python —
+                        pour sniffer et analyser ces paquets en temps réel. L'association des deux permet de visualiser concrètement
+                        ce qui se passe "sous le capot" de chaque connexion réseau.
+                    </p>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <p class="info-box-title">Objectif pédagogique</p>
+                            <p>À la fin de cet article, vous serez capable de créer un serveur/client TCP en Python, de capturer
+                            les paquets associés avec Scapy, et d'interpréter les flags TCP pour comprendre l'état d'une connexion.</p>
+                        </div>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <p class="warn-box-title">Éthique & Légalité</p>
+                            <p>Le sniffing réseau est une technique puissante qui doit être utilisée <strong>uniquement sur des réseaux
+                            dont vous avez l'autorisation explicite</strong> d'analyser. Intercepter des communications sans autorisation
+                            est illégal dans la plupart des pays. Toutes les démonstrations de cet article s'effectuent en
+                            <code>localhost</code> (127.0.0.1), dans un environnement contrôlé.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODELE TCP -->
+                <section id="modele-tcp" class="article-section">
+                    <div class="section-label">// 02 — FONDEMENTS</div>
+                    <h2>Le modèle TCP/IP : rappels essentiels</h2>
+
+                    <p>
+                        Avant de plonger dans le code, il est crucial de comprendre les couches réseau impliquées dans nos échanges.
+                        Le modèle TCP/IP (ou modèle Internet) organise les protocoles réseau en 4 couches distinctes, chacune ayant
+                        un rôle précis.
+                    </p>
+
+                    <!-- Couches TCP/IP -->
+                    <div class="tcp-layers">
+                        <div class="layer" style="--layer-color: #00e5ff; --layer-bg: rgba(0,229,255,0.06)">
+                            <div class="layer-num">4</div>
+                            <div class="layer-info">
+                                <span class="layer-name">Application</span>
+                                <span class="layer-desc">HTTP, FTP, SSH, DNS — nos données applicatives</span>
+                            </div>
+                            <div class="layer-pdu">Message</div>
+                        </div>
+                        <div class="layer" style="--layer-color: #00ff6a; --layer-bg: rgba(0,255,106,0.06)">
+                            <div class="layer-num">3</div>
+                            <div class="layer-info">
+                                <span class="layer-name">Transport</span>
+                                <span class="layer-desc">TCP / UDP — segmentation, fiabilité, ports</span>
+                            </div>
+                            <div class="layer-pdu">Segment</div>
+                        </div>
+                        <div class="layer" style="--layer-color: #ffe066; --layer-bg: rgba(255,224,102,0.06)">
+                            <div class="layer-num">2</div>
+                            <div class="layer-info">
+                                <span class="layer-name">Internet</span>
+                                <span class="layer-desc">IP, ICMP — adressage et routage</span>
+                            </div>
+                            <div class="layer-pdu">Paquet</div>
+                        </div>
+                        <div class="layer" style="--layer-color: #ff6b6b; --layer-bg: rgba(255,107,107,0.06)">
+                            <div class="layer-num">1</div>
+                            <div class="layer-info">
+                                <span class="layer-name">Accès réseau</span>
+                                <span class="layer-desc">Ethernet, Wi-Fi — transmission physique</span>
+                            </div>
+                            <div class="layer-pdu">Trame</div>
+                        </div>
+                    </div>
+
+                    <p>
+                        Dans notre implémentation, nous opérons principalement aux couches <strong>Transport</strong> (TCP, via les sockets)
+                        et <strong>Internet</strong> (IP, via Scapy qui inspecte les en-têtes IP et TCP).
+                    </p>
+
+                    <h3>TCP vs UDP : pourquoi choisir TCP ?</h3>
+                    <p>
+                        TCP (<em>Transmission Control Protocol</em>) est un protocole <strong>orienté connexion</strong> qui garantit
+                        la livraison des données dans l'ordre. Il utilise un mécanisme de confirmation (ACK) et de retransmission.
+                        À l'opposé, UDP (<em>User Datagram Protocol</em>) est plus rapide mais sans garantie de livraison.
+                        Pour notre démonstration, TCP est idéal car il génère un échange de paquets riche et observable.
+                    </p>
+
+                    <div class="compare-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Caractéristique</th>
+                                    <th class="tcp-col">TCP</th>
+                                    <th class="udp-col">UDP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Connexion</td><td class="tcp-col"><i class="fas fa-check"></i> Orienté connexion</td><td class="udp-col"><i class="fas fa-times"></i> Sans connexion</td></tr>
+                                <tr><td>Fiabilité</td><td class="tcp-col"><i class="fas fa-check"></i> Garantie</td><td class="udp-col"><i class="fas fa-times"></i> Non garantie</td></tr>
+                                <tr><td>Ordre des données</td><td class="tcp-col"><i class="fas fa-check"></i> Préservé</td><td class="udp-col"><i class="fas fa-times"></i> Non préservé</td></tr>
+                                <tr><td>Vitesse</td><td class="tcp-col"><i class="fas fa-minus"></i> Plus lent</td><td class="udp-col"><i class="fas fa-check"></i> Plus rapide</td></tr>
+                                <tr><td>Usage typique</td><td class="tcp-col">HTTP, SSH, FTP</td><td class="udp-col">DNS, VoIP, jeux</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SOCKETS -->
+                <section id="sockets" class="article-section">
+                    <div class="section-label">// 03 — SOCKETS PYTHON</div>
+                    <h2>Programmer des sockets TCP en Python</h2>
+
+                    <p>
+                        Un <strong>socket</strong> est une interface de programmation (API) qui permet à deux processus de communiquer
+                        via un réseau. En Python, le module <code>socket</code> de la bibliothèque standard expose cette interface
+                        de manière simple et portable.
+                    </p>
+
+                    <p>
+                        Un socket TCP se caractérise par un tuple <code>(adresse_IP, port)</code>. Le serveur écoute sur un port donné,
+                        tandis que le client initie la connexion depuis un port éphémère attribué automatiquement par l'OS.
+                    </p>
+
+                    <h3>Le serveur TCP</h3>
+                    <p>
+                        Le serveur suit un cycle de vie précis : <strong>créer</strong> le socket → <strong>lier</strong> à une adresse/port
+                        → <strong>écouter</strong> les connexions entrantes → <strong>accepter</strong> un client → <strong>recevoir</strong>
+                        les données → <strong>répondre</strong> → fermer.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — server.py</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> socket
+<span class="kw">import</span> threading
+
+<span class="comment"># Constantes de configuration</span>
+HOST = <span class="str">'127.0.0.1'</span>  <span class="comment"># Écoute uniquement en local</span>
+PORT = <span class="num">5000</span>        <span class="comment"># Port d'écoute du serveur</span>
+
+<span class="kw">def</span> <span class="fn">handle_client</span>(conn, addr):
+    <span class="str">"""Gère la communication avec un client connecté."""</span>
+    <span class="kw">print</span>(<span class="str">f"🔗 Client connecté : {addr}"</span>)
+    <span class="kw">with</span> conn:
+        <span class="kw">while</span> <span class="kw">True</span>:
+            data = conn.recv(<span class="num">1024</span>)   <span class="comment"># Buffer de 1024 octets</span>
+            <span class="kw">if not</span> data:
+                <span class="kw">break</span>
+            message = data.decode(<span class="str">'utf-8'</span>)
+            <span class="kw">print</span>(<span class="str">f"📩 Reçu : {message}"</span>)
+            <span class="comment"># Accusé de réception applicatif</span>
+            conn.sendall(<span class="str">"ACK"</span>.encode(<span class="str">'utf-8'</span>))
+
+<span class="kw">def</span> <span class="fn">start_server</span>():
+    <span class="comment"># AF_INET = IPv4 | SOCK_STREAM = TCP</span>
+    <span class="kw">with</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM) <span class="kw">as</span> s:
+        <span class="comment"># Permet la réutilisation immédiate du port (évite "Address already in use")</span>
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, <span class="num">1</span>)
+        s.bind((HOST, PORT))
+        s.listen(<span class="num">5</span>)  <span class="comment"># File d'attente de 5 connexions max</span>
+        <span class="kw">print</span>(<span class="str">f"🌐 Serveur TCP lancé sur {HOST}:{PORT}"</span>)
+
+        <span class="kw">while</span> <span class="kw">True</span>:
+            conn, addr = s.accept()  <span class="comment"># Bloquant — attend une connexion</span>
+            <span class="comment"># Thread séparé par client pour gérer plusieurs connexions</span>
+            t = threading.Thread(target=handle_client, args=(conn, addr))
+            t.daemon = <span class="kw">True</span>
+            t.start()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    start_server()</code></pre>
+                    </div>
+
+                    <h3>Le client TCP</h3>
+                    <p>
+                        Le client est plus simple : il crée un socket, <strong>initie la connexion</strong> vers le serveur
+                        (ce qui déclenche le three-way handshake), envoie des données et attend la réponse.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — client.py</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> socket
+
+HOST = <span class="str">'127.0.0.1'</span>
+PORT = <span class="num">5000</span>
+
+<span class="kw">with</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM) <span class="kw">as</span> s:
+    s.connect((HOST, PORT))   <span class="comment"># Déclenche le 3-way handshake !</span>
+
+    <span class="kw">while</span> <span class="kw">True</span>:
+        msg = input(<span class="str">"Message : "</span>)
+        <span class="kw">if not</span> msg:
+            <span class="kw">break</span>
+        s.sendall(msg.encode(<span class="str">'utf-8'</span>))
+        response = s.recv(<span class="num">1024</span>).decode(<span class="str">'utf-8'</span>)
+        <span class="kw">print</span>(response)   <span class="comment"># Affiche "ACK" du serveur</span></code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-info-circle"></i></div>
+                        <div>
+                            <p class="info-box-title">Paramètres du socket expliqués</p>
+                            <ul class="article-list">
+                                <li><code>AF_INET</code> — Famille d'adresses IPv4 (utiliser <code>AF_INET6</code> pour IPv6)</li>
+                                <li><code>SOCK_STREAM</code> — Type TCP (flot d'octets ordonné et fiable)</li>
+                                <li><code>SO_REUSEADDR</code> — Réutilise le port même en état TIME_WAIT</li>
+                                <li><code>recv(1024)</code> — Taille du buffer de réception en octets</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- THREE-WAY HANDSHAKE -->
+                <section id="handshake" class="article-section">
+                    <div class="section-label">// 04 — PROTOCOLE TCP</div>
+                    <h2>Le Three-Way Handshake : établissement de connexion</h2>
+
+                    <p>
+                        Avant d'échanger le moindre octet de données applicatives, TCP établit une connexion via un mécanisme
+                        en 3 étapes : le <strong>three-way handshake</strong>. Ce processus permet aux deux parties de synchroniser
+                        leurs numéros de séquence (SEQ) et d'établir un canal bidirectionnel fiable.
+                    </p>
+
+                    <!-- Diagramme handshake -->
+                    <div class="handshake-diagram">
+                        <div class="hs-column">
+                            <div class="hs-entity client-entity">
+                                <i class="fas fa-laptop-code"></i>
+                                <span>Client</span>
+                                <small>127.0.0.1:62152</small>
+                            </div>
+                            <div class="hs-timeline client-line"></div>
+                        </div>
+
+                        <div class="hs-arrows">
+                            <div class="hs-step">
+                                <div class="hs-arrow right-arrow">
+                                    <span class="hs-flag syn">SYN</span>
+                                    <span class="hs-detail">Seq=0 — "Je veux me connecter"</span>
+                                    <div class="arrow-line"></div>
+                                    <i class="fas fa-arrow-right arrow-icon"></i>
+                                </div>
+                                <div class="hs-pkt">
+                                    <span class="pkt-badge">Flags: S</span>
+                                    <span class="pkt-size">56 bytes</span>
+                                </div>
+                            </div>
+                            <div class="hs-step">
+                                <div class="hs-arrow left-arrow">
+                                    <i class="fas fa-arrow-left arrow-icon"></i>
+                                    <div class="arrow-line"></div>
+                                    <span class="hs-detail">"OK, et toi synchronise-toi"</span>
+                                    <span class="hs-flag synack">SYN-ACK</span>
+                                </div>
+                                <div class="hs-pkt">
+                                    <span class="pkt-badge">Flags: SA</span>
+                                    <span class="pkt-size">56 bytes</span>
+                                </div>
+                            </div>
+                            <div class="hs-step">
+                                <div class="hs-arrow right-arrow">
+                                    <span class="hs-flag ack">ACK</span>
+                                    <span class="hs-detail">Seq=1, Ack=1 — "Confirmé !"</span>
+                                    <div class="arrow-line"></div>
+                                    <i class="fas fa-arrow-right arrow-icon"></i>
+                                </div>
+                                <div class="hs-pkt">
+                                    <span class="pkt-badge">Flags: A</span>
+                                    <span class="pkt-size">44 bytes</span>
+                                </div>
+                            </div>
+                            <div class="hs-step hs-data">
+                                <div class="hs-arrow right-arrow">
+                                    <span class="hs-flag psh">PSH+ACK</span>
+                                    <span class="hs-detail">"Hello Yasuo" — données envoyées</span>
+                                    <div class="arrow-line"></div>
+                                    <i class="fas fa-arrow-right arrow-icon"></i>
+                                </div>
+                                <div class="hs-pkt">
+                                    <span class="pkt-badge">Flags: PA</span>
+                                    <span class="pkt-size">55 bytes</span>
+                                </div>
+                            </div>
+                            <div class="hs-step hs-data">
+                                <div class="hs-arrow left-arrow">
+                                    <i class="fas fa-arrow-left arrow-icon"></i>
+                                    <div class="arrow-line"></div>
+                                    <span class="hs-detail">Accusé réception des données</span>
+                                    <span class="hs-flag ack">ACK</span>
+                                </div>
+                                <div class="hs-pkt">
+                                    <span class="pkt-badge">Flags: A</span>
+                                    <span class="pkt-size">44 bytes</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hs-column">
+                            <div class="hs-entity server-entity">
+                                <i class="fas fa-server"></i>
+                                <span>Serveur</span>
+                                <small>127.0.0.1:5000</small>
+                            </div>
+                            <div class="hs-timeline server-line"></div>
+                        </div>
+                    </div>
+
+                    <h3>Décryptage des flags TCP</h3>
+                    <p>
+                        Chaque segment TCP contient un champ de 6 bits de contrôle appelés <strong>flags</strong>. Ils définissent
+                        la nature et l'état du segment. Voici les flags observés dans notre capture :
+                    </p>
+
+                    <div class="flags-grid">
+                        <div class="flag-card">
+                            <span class="flag-badge syn">SYN</span>
+                            <h4>Synchronize</h4>
+                            <p>Initie une connexion TCP. Le premier paquet envoyé par le client. Contient le numéro de séquence initial (ISN).</p>
+                            <div class="flag-code">Flags: S</div>
+                        </div>
+                        <div class="flag-card">
+                            <span class="flag-badge synack">SYN-ACK</span>
+                            <h4>Synchronize + Acknowledge</h4>
+                            <p>Réponse du serveur au SYN. Il accepte la connexion et envoie son propre numéro de séquence.</p>
+                            <div class="flag-code">Flags: SA</div>
+                        </div>
+                        <div class="flag-card">
+                            <span class="flag-badge ack">ACK</span>
+                            <h4>Acknowledge</h4>
+                            <p>Confirme la réception d'un segment. Présent dans quasiment tous les paquets après l'établissement de la connexion.</p>
+                            <div class="flag-code">Flags: A</div>
+                        </div>
+                        <div class="flag-card">
+                            <span class="flag-badge psh">PSH</span>
+                            <h4>Push</h4>
+                            <p>Demande à l'OS de transmettre immédiatement les données au processus destinataire sans attendre de remplir le buffer.</p>
+                            <div class="flag-code">Flags: PA</div>
+                        </div>
+                        <div class="flag-card">
+                            <span class="flag-badge fin">FIN</span>
+                            <h4>Finish</h4>
+                            <p>Initie la fermeture de la connexion. Chaque côté envoie un FIN pour terminer proprement.</p>
+                            <div class="flag-code">Flags: F</div>
+                        </div>
+                        <div class="flag-card">
+                            <span class="flag-badge rst">RST</span>
+                            <h4>Reset</h4>
+                            <p>Réinitialisation forcée de la connexion. Utilisé en cas d'erreur ou de refus de connexion.</p>
+                            <div class="flag-code">Flags: R</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SCAPY -->
+                <section id="scapy" class="article-section">
+                    <div class="section-label">// 05 — SCAPY</div>
+                    <h2>Scapy : la boîte à outils réseau Python</h2>
+
+                    <p>
+                        <strong>Scapy</strong> est une bibliothèque Python incontournable dans le domaine de la sécurité réseau.
+                        Elle permet de <strong>créer</strong>, <strong>envoyer</strong>, <strong>capturer</strong> et
+                        <strong>analyser</strong> des paquets réseau avec une flexibilité remarquable. Contrairement à des outils
+                        comme Wireshark (GUI), Scapy s'intègre dans des scripts Python pour automatiser l'analyse.
+                    </p>
+
+                    <div class="scapy-features">
+                        <div class="sf-item">
+                            <i class="fas fa-search"></i>
+                            <span>Sniffing en temps réel</span>
+                        </div>
+                        <div class="sf-item">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Forgeage de paquets</span>
+                        </div>
+                        <div class="sf-item">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Dissection multi-couches</span>
+                        </div>
+                        <div class="sf-item">
+                            <i class="fas fa-filter"></i>
+                            <span>Filtres BPF (Berkeley)</span>
+                        </div>
+                        <div class="sf-item">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Analyse statistique</span>
+                        </div>
+                        <div class="sf-item">
+                            <i class="fas fa-code"></i>
+                            <span>Scriptable en Python</span>
+                        </div>
+                    </div>
+
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> Terminal (Administrator requis)</span>
+                        </div>
+                        <pre><code><span class="comment"># Installation via pip</span>
+pip install scapy
+
+<span class="comment"># Sur Windows, installer aussi Npcap (driver de capture)</span>
+<span class="comment"># https://npcap.com/#download</span>
+
+<span class="comment"># Vérification</span>
+python -c <span class="str">"from scapy.all import *; print(conf.version)"</span></code></pre>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <p class="warn-box-title">Droits administrateur requis</p>
+                            <p>Le sniffing de paquets nécessite un accès bas niveau à l'interface réseau.
+                            Sur <strong>Windows</strong>, lancez votre script en tant qu'Administrateur.
+                            Sur <strong>Linux/macOS</strong>, utilisez <code>sudo python script.py</code> ou accordez
+                            les capabilities réseau : <code>sudo setcap cap_net_raw+eip /usr/bin/python3</code></p>
+                        </div>
+                    </div>
+
+                    <h3>Comprendre la fonction <code>sniff()</code></h3>
+                    <p>
+                        La fonction centrale de Scapy pour la capture est <code>sniff()</code>. Elle accepte de nombreux paramètres
+                        permettant de cibler précisément les paquets qui nous intéressent.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — Anatomie de sniff()</span>
+                        </div>
+                        <pre><code><span class="kw">from</span> scapy.all <span class="kw">import</span> sniff, TCP, IP
+
+sniff(
+    filter=<span class="str">"tcp and port 5000"</span>,  <span class="comment"># Filtre BPF : uniquement TCP sur le port 5000</span>
+    prn=analyse_packet,             <span class="comment"># Callback appelé pour chaque paquet capturé</span>
+    store=<span class="kw">False</span>,                   <span class="comment"># Ne pas stocker en mémoire (mode streaming)</span>
+    iface=<span class="kw">None</span>,                    <span class="comment"># None = toutes les interfaces</span>
+    count=<span class="num">0</span>,                        <span class="comment"># 0 = capturer indéfiniment</span>
+    timeout=<span class="kw">None</span>                    <span class="comment"># None = pas de timeout</span>
+)</code></pre>
+                    </div>
+
+                    <h3>Les filtres BPF</h3>
+                    <p>
+                        Scapy utilise la syntaxe <strong>BPF</strong> (Berkeley Packet Filter) pour les filtres, la même que
+                        tcpdump et Wireshark. Ces filtres s'appliquent au niveau du kernel pour des performances optimales.
+                    </p>
+
+                    <div class="bpf-examples">
+                        <div class="bpf-row">
+                            <code>"tcp"</code>
+                            <span>Tous les paquets TCP</span>
+                        </div>
+                        <div class="bpf-row">
+                            <code>"tcp and port 5000"</code>
+                            <span>TCP sur le port 5000 uniquement</span>
+                        </div>
+                        <div class="bpf-row">
+                            <code>"host 127.0.0.1"</code>
+                            <span>Trafic vers/depuis 127.0.0.1</span>
+                        </div>
+                        <div class="bpf-row">
+                            <code>"tcp and port 5000 and host 127.0.0.1"</code>
+                            <span>Combinaison avec opérateurs logiques</span>
+                        </div>
+                        <div class="bpf-row">
+                            <code>"not port 22"</code>
+                            <span>Tout sauf le port SSH</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IMPLEMENTATION -->
+                <section id="implementation" class="article-section">
+                    <div class="section-label">// 06 — IMPLÉMENTATION COMPLÈTE</div>
+                    <h2>Application GUI : Sockets & Sniffing intégrés</h2>
+
+                    <p>
+                        Voici l'implémentation complète de l'application démontrée dans les captures d'écran. Elle combine
+                        un serveur TCP, une interface graphique Tkinter et un sniffer Scapy, le tout exécuté via des threads
+                        pour rester réactif.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — main_app.py (Application complète)</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> socket
+<span class="kw">import</span> threading
+<span class="kw">import</span> tkinter <span class="kw">as</span> tk
+<span class="kw">from</span> tkinter <span class="kw">import</span> scrolledtext
+<span class="kw">from</span> scapy.all <span class="kw">import</span> sniff, TCP, IP
+
+<span class="comment"># ─── Configuration ───────────────────────────────────────</span>
+HOST = <span class="str">'127.0.0.1'</span>
+PORT = <span class="num">5000</span>
+
+<span class="comment"># ─── Interface Graphique ──────────────────────────────────</span>
+root = tk.Tk()
+root.title(<span class="str">"Analyse Réseau - Sockets & Sniffing"</span>)
+root.geometry(<span class="str">"900x620"</span>)
+root.configure(bg=<span class="str">'#1a1a2e'</span>)
+
+FONT = (<span class="str">'Courier New'</span>, <span class="num">10</span>)
+BG   = <span class="str">'#16213e'</span>
+FG   = <span class="str">'#e0e0e0'</span>
+
+<span class="comment"># Zone messages socket</span>
+tk.Label(root, text=<span class="str">"=== Messages Socket ==="</span>,
+         font=FONT, bg=BG, fg=<span class="str">'#00ff6a'</span>).pack(fill=<span class="str">'x'</span>, padx=<span class="num">5</span>)
+msg_box = scrolledtext.ScrolledText(
+    root, height=<span class="num">10</span>, font=FONT, bg=BG, fg=FG, state=<span class="str">'disabled'</span>)
+msg_box.pack(fill=<span class="str">'both'</span>, expand=<span class="kw">True</span>, padx=<span class="num">5</span>, pady=<span class="num">2</span>)
+
+<span class="comment"># Zone paquets sniffés</span>
+tk.Label(root, text=<span class="str">"=== Paquets Sniffés ==="</span>,
+         font=FONT, bg=BG, fg=<span class="str">'#00e5ff'</span>).pack(fill=<span class="str">'x'</span>, padx=<span class="num">5</span>)
+sniff_box = scrolledtext.ScrolledText(
+    root, height=<span class="num">15</span>, font=FONT, bg=BG, fg=FG, state=<span class="str">'disabled'</span>)
+sniff_box.pack(fill=<span class="str">'both'</span>, expand=<span class="kw">True</span>, padx=<span class="num">5</span>, pady=<span class="num">2</span>)
+
+<span class="comment"># ─── Fonctions utilitaires ────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">log</span>(widget, msg):
+    <span class="str">"""Ajoute un message dans une zone de texte (thread-safe)."""</span>
+    widget.config(state=<span class="str">'normal'</span>)
+    widget.insert(tk.END, msg + <span class="str">'\n'</span>)
+    widget.see(tk.END)
+    widget.config(state=<span class="str">'disabled'</span>)
+
+<span class="kw">def</span> <span class="fn">get_flags</span>(tcp_flags):
+    <span class="str">"""Convertit les flags numériques en notation lisible."""</span>
+    flags = <span class="str">''</span>
+    <span class="kw">if</span> tcp_flags & <span class="num">0x02</span>: flags += <span class="str">'S'</span>   <span class="comment"># SYN</span>
+    <span class="kw">if</span> tcp_flags & <span class="num">0x10</span>: flags += <span class="str">'A'</span>   <span class="comment"># ACK</span>
+    <span class="kw">if</span> tcp_flags & <span class="num">0x08</span>: flags += <span class="str">'P'</span>   <span class="comment"># PSH — avant ACK pour avoir PA</span>
+    <span class="kw">if</span> tcp_flags & <span class="num">0x01</span>: flags += <span class="str">'F'</span>   <span class="comment"># FIN</span>
+    <span class="kw">if</span> tcp_flags & <span class="num">0x04</span>: flags += <span class="str">'R'</span>   <span class="comment"># RST</span>
+    <span class="kw">return</span> flags <span class="kw">or</span> <span class="str">'?'</span>
+
+<span class="comment"># ─── Serveur TCP ─────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">handle_client</span>(conn, addr):
+    log(msg_box, <span class="str">f"🔗 Client connecté : {addr}"</span>)
+    <span class="kw">with</span> conn:
+        <span class="kw">while</span> <span class="kw">True</span>:
+            data = conn.recv(<span class="num">1024</span>)
+            <span class="kw">if not</span> data: <span class="kw">break</span>
+            log(msg_box, <span class="str">f"📩 Reçu : {data.decode('utf-8')}"</span>)
+            conn.sendall(<span class="str">"ACK"</span>.encode(<span class="str">'utf-8'</span>))
+
+<span class="kw">def</span> <span class="fn">start_server</span>():
+    log(msg_box, <span class="str">"🌐 Serveur TCP lancé..."</span>)
+    <span class="kw">with</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM) <span class="kw">as</span> s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, <span class="num">1</span>)
+        s.bind((HOST, PORT))
+        s.listen(<span class="num">5</span>)
+        <span class="kw">while</span> <span class="kw">True</span>:
+            conn, addr = s.accept()
+            threading.Thread(
+                target=handle_client, args=(conn, addr), daemon=<span class="kw">True</span>
+            ).start()
+
+<span class="comment"># ─── Sniffer Scapy ───────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">analyse_packet</span>(pkt):
+    <span class="str">"""Callback appelé par Scapy pour chaque paquet capturé."""</span>
+    <span class="kw">if</span> pkt.haslayer(TCP) <span class="kw">and</span> pkt.haslayer(IP):
+        ip  = pkt[IP]
+        tcp = pkt[TCP]
+        flags = get_flags(<span class="kw">int</span>(tcp.flags))
+        size  = <span class="kw">len</span>(pkt)
+
+        line = (
+            <span class="str">f"🔎 {ip.src}:{tcp.sport:<span class="num">8</span>}"</span>
+            <span class="str">f" → {ip.dst}:{tcp.dport:<span class="num">8</span>}"</span>
+            <span class="str">f" | TCP | {size:<span class="num">4</span>} bytes"</span>
+            <span class="str">f" | Flags: {flags}"</span>
+        )
+        root.after(<span class="num">0</span>, <span class="kw">lambda</span> l=line: log(sniff_box, l))
+
+<span class="kw">def</span> <span class="fn">start_sniff</span>():
+    log(sniff_box, <span class="str">"🔍 Sniffing TCP actif..."</span>)
+    sniff(
+        filter=<span class="str">f"tcp and port {PORT}"</span>,
+        prn=analyse_packet,
+        store=<span class="kw">False</span>
+    )
+
+<span class="comment"># ─── Lancement des threads ────────────────────────────────</span>
+threading.Thread(target=start_server, daemon=<span class="kw">True</span>).start()
+threading.Thread(target=start_sniff,  daemon=<span class="kw">True</span>).start()
+
+root.mainloop()</code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-microchip"></i></div>
+                        <div>
+                            <p class="info-box-title">Architecture multi-threads</p>
+                            <p>L'application utilise 3 threads distincts pour éviter tout blocage de l'interface :</p>
+                            <ul class="article-list">
+                                <li><strong>Thread Principal</strong> — Boucle d'événements Tkinter (interface graphique)</li>
+                                <li><strong>Thread Serveur</strong> — Écoute et accepte les connexions TCP entrantes</li>
+                                <li><strong>Thread Sniffer</strong> — Capture passive des paquets avec Scapy</li>
+                            </ul>
+                            <p style="margin-top:0.5rem">La méthode <code>root.after(0, lambda...)</code> permet de mettre à jour l'interface
+                            depuis un thread secondaire de manière thread-safe.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ANALYSE PAQUETS -->
+                <section id="analyse" class="article-section">
+                    <div class="section-label">// 07 — RÉSULTATS & ANALYSE</div>
+                    <h2>Analyse des paquets capturés</h2>
+
+                    <p>
+                        Voici la sortie réelle obtenue lors de l'exécution de l'application. Chaque ligne correspond à un paquet
+                        TCP capturé par Scapy. Analysons ce que nous révèle cette capture.
+                    </p>
+
+                    <!-- Capture simulée -->
+                    <div class="capture-output">
+                        <div class="capture-header">
+                            <span class="capture-title"><i class="fas fa-terminal"></i> Sortie — Paquets Sniffés</span>
+                            <span class="capture-badge live">LIVE</span>
+                        </div>
+                        <div class="capture-body">
+                            <div class="capture-line comment-line">🔍 Sniffing TCP actif...</div>
+                            <div class="capture-line syn-line">
+                                <span class="cl-src">127.0.0.1:62152</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:5000</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">56 bytes</span>
+                                <span class="cl-flag flag-syn">Flags: S</span>
+                                <span class="cl-explain">← 1. SYN — Client initie</span>
+                            </div>
+                            <div class="capture-line synack-line">
+                                <span class="cl-src">127.0.0.1:5000</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:62152</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">56 bytes</span>
+                                <span class="cl-flag flag-synack">Flags: SA</span>
+                                <span class="cl-explain">← 2. SYN-ACK — Serveur accepte</span>
+                            </div>
+                            <div class="capture-line ack-line">
+                                <span class="cl-src">127.0.0.1:62152</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:5000</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">44 bytes</span>
+                                <span class="cl-flag flag-ack">Flags: A</span>
+                                <span class="cl-explain">← 3. ACK — Connexion établie ✓</span>
+                            </div>
+                            <div class="capture-line psh-line">
+                                <span class="cl-src">127.0.0.1:62152</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:5000</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">55 bytes</span>
+                                <span class="cl-flag flag-psh">Flags: PA</span>
+                                <span class="cl-explain">← 4. Données "Hello Yasuo"</span>
+                            </div>
+                            <div class="capture-line ack-line">
+                                <span class="cl-src">127.0.0.1:5000</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:62152</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">44 bytes</span>
+                                <span class="cl-flag flag-ack">Flags: A</span>
+                                <span class="cl-explain">← 5. ACK des données</span>
+                            </div>
+                            <div class="capture-line psh-line">
+                                <span class="cl-src">127.0.0.1:5000</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:62152</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">47 bytes</span>
+                                <span class="cl-flag flag-psh">Flags: PA</span>
+                                <span class="cl-explain">← 6. Réponse "ACK" du serveur</span>
+                            </div>
+                            <div class="capture-line ack-line">
+                                <span class="cl-src">127.0.0.1:62152</span>
+                                <span class="cl-arrow">→</span>
+                                <span class="cl-dst">127.0.0.1:5000</span>
+                                <span class="cl-proto">TCP</span>
+                                <span class="cl-size">44 bytes</span>
+                                <span class="cl-flag flag-ack">Flags: A</span>
+                                <span class="cl-explain">← 7. ACK final du client</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Interprétation détaillée</h3>
+
+                    <div class="interpretation-steps">
+                        <div class="is-step">
+                            <div class="is-num syn-bg">1–3</div>
+                            <div class="is-content">
+                                <h4>Three-Way Handshake (paquets 1 à 3)</h4>
+                                <p>Les trois premiers paquets constituent l'établissement de la connexion TCP.
+                                Notez que les paquets SYN et SYN-ACK font chacun <strong>56 bytes</strong> (en-têtes IP + TCP avec options MSS)
+                                alors que l'ACK nu ne fait que <strong>44 bytes</strong> (sans options additionnelles). La connexion est
+                                pleinement établie après le 3ème paquet.</p>
+                            </div>
+                        </div>
+                        <div class="is-step">
+                            <div class="is-num psh-bg">4</div>
+                            <div class="is-content">
+                                <h4>Envoi de données — PSH+ACK (paquet 4)</h4>
+                                <p>Le flag <strong>PSH</strong> (Push) combiné à <strong>ACK</strong> indique l'envoi du message "Hello Yasuo".
+                                Le flag PSH force l'OS à transmettre immédiatement les données au processus destinataire sans attendre
+                                d'accumuler plus de données dans le buffer. La taille de <strong>55 bytes</strong> inclut les 11 caractères
+                                de "Hello Yasuo" plus les en-têtes TCP/IP.</p>
+                            </div>
+                        </div>
+                        <div class="is-step">
+                            <div class="is-num ack-bg">5</div>
+                            <div class="is-content">
+                                <h4>Acknowledgement des données (paquet 5)</h4>
+                                <p>Le serveur accuse réception des données applicatives avec un ACK pur (44 bytes).
+                                À ce stade, le serveur a reçu le message mais n'a pas encore envoyé sa réponse applicative "ACK".</p>
+                            </div>
+                        </div>
+                        <div class="is-step">
+                            <div class="is-num psh-bg">6</div>
+                            <div class="is-content">
+                                <h4>Réponse du serveur — PSH+ACK (paquet 6)</h4>
+                                <p>Le serveur envoie la réponse applicative "ACK" (3 bytes de données). Le paquet fait <strong>47 bytes</strong>
+                                soit 3 bytes de plus que l'ACK nu, ce qui correspond exactement à la chaîne "ACK" en ASCII.</p>
+                            </div>
+                        </div>
+                        <div class="is-step">
+                            <div class="is-num ack-bg">7</div>
+                            <div class="is-content">
+                                <h4>ACK final du client (paquet 7)</h4>
+                                <p>Le client confirme la réception de la réponse du serveur. L'échange est complet.
+                                La connexion reste ouverte pour d'éventuels messages suivants.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Calcul de la taille des paquets</h3>
+                    <div class="size-breakdown">
+                        <div class="sb-header">
+                            <span>Composition d'un paquet TCP/IP typique</span>
+                        </div>
+                        <div class="sb-body">
+                            <div class="sb-row">
+                                <span class="sb-label">En-tête Ethernet</span>
+                                <span class="sb-bar" style="--w:29%"><div style="width:100%;background:#ff6b6b;height:100%;border-radius:2px"></div></span>
+                                <span class="sb-val">14 bytes</span>
+                            </div>
+                            <div class="sb-row">
+                                <span class="sb-label">En-tête IP (IPv4)</span>
+                                <span class="sb-bar" style="--w:40%"><div style="width:100%;background:#ffe066;height:100%;border-radius:2px"></div></span>
+                                <span class="sb-val">20 bytes</span>
+                            </div>
+                            <div class="sb-row">
+                                <span class="sb-label">En-tête TCP</span>
+                                <span class="sb-bar" style="--w:40%"><div style="width:100%;background:#00e5ff;height:100%;border-radius:2px"></div></span>
+                                <span class="sb-val">20 bytes (min)</span>
+                            </div>
+                            <div class="sb-row">
+                                <span class="sb-label">Données applicatives</span>
+                                <span class="sb-bar" style="--w:20%"><div style="width:100%;background:#00ff6a;height:100%;border-radius:2px"></div></span>
+                                <span class="sb-val">Variable</span>
+                            </div>
+                            <div class="sb-total">
+                                ACK nu = 14 + 20 + 20 = <strong>44 bytes</strong> ✓ (correspond à nos captures !)
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONCLUSION -->
+                <section id="conclusion" class="article-section">
+                    <div class="section-label">// 08 — CONCLUSION</div>
+                    <h2>Conclusion & Perspectives</h2>
+
+                    <p>
+                        À travers cet article, nous avons exploré l'ensemble du cycle de vie d'une communication TCP :
+                        depuis la programmation des sockets en Python jusqu'à la capture et l'analyse des paquets avec Scapy.
+                        La corrélation entre le code applicatif et les paquets réseau observés permet de comprendre
+                        concrètement ce qui se passe à chaque niveau du modèle réseau.
+                    </p>
+
+                    <div class="takeaways">
+                        <h3>Points clés à retenir</h3>
+                        <ul class="article-list checklist">
+                            <li>Le module <code>socket</code> Python expose une interface simple pour créer des connexions TCP/UDP</li>
+                            <li>Tout appel à <code>connect()</code> déclenche automatiquement un three-way handshake TCP</li>
+                            <li>Les flags TCP (SYN, ACK, PSH, FIN, RST) définissent l'état et la nature de chaque segment</li>
+                            <li>Scapy permet de capturer et d'analyser ces paquets en temps réel avec une grande flexibilité</li>
+                            <li>Un paquet ACK nu fait toujours 44 bytes (14 ETH + 20 IP + 20 TCP) en IPv4 sur Ethernet</li>
+                            <li>Le multi-threading est indispensable pour combiner serveur, sniffer et interface graphique</li>
+                        </ul>
+                    </div>
+
+                    <h3>Pour aller plus loin</h3>
+                    <div class="next-steps">
+                        <div class="ns-card">
+                            <i class="fas fa-shield-virus"></i>
+                            <h4>Détection d'intrusion</h4>
+                            <p>Étendre le sniffer pour détecter des patterns suspects : scans de ports (nombreux SYN sans ACK), attaques SYN flood, etc.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-lock"></i>
+                            <h4>TLS / HTTPS</h4>
+                            <p>Analyser comment TLS encapsule les données applicatives et rend le contenu illisible au niveau réseau.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-network-wired"></i>
+                            <h4>Scapy avancé</h4>
+                            <p>Forger des paquets personnalisés, simuler des attaques en environnement contrôlé, implémenter un ARP scanner.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SHARE / NAV -->
+                <div class="article-nav-bottom">
+                    <a href="articles.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retour aux articles
+                    </a>
+                    <div class="share-buttons">
+                        <span class="share-label">Partager :</span>
+                        <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank" class="share-btn linkedin">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank" class="share-btn github">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </article>
+
+            <!-- SIDEBAR -->
+            <aside class="article-sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// AUTEUR</div>
+                    <div class="sidebar-author">
+                        <div class="sa-avatar">BL</div>
+                        <div class="sa-name">Baali Lhoussaine</div>
+                        <div class="sa-role">Master Cryptologie & Sécurité Informatique</div>
+                        <div class="sa-links">
+                            <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                            <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                            <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// TECHNOLOGIES</div>
+                    <div class="sidebar-tech-list">
+                        <span class="tech">Python 3.x</span>
+                        <span class="tech">Scapy</span>
+                        <span class="tech">socket</span>
+                        <span class="tech">threading</span>
+                        <span class="tech">tkinter</span>
+                        <span class="tech">TCP/IP</span>
+                        <span class="tech">BPF Filters</span>
+                        <span class="tech">Npcap</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// NIVEAU</div>
+                    <div class="level-bar-wrap">
+                        <div class="level-label">Prérequis Python</div>
+                        <div class="level-bar"><div class="level-fill" style="width:60%"></div></div>
+                        <div class="level-label">Prérequis Réseau</div>
+                        <div class="level-bar"><div class="level-fill" style="width:40%"></div></div>
+                        <div class="level-label">Difficulté globale</div>
+                        <div class="level-bar"><div class="level-fill" style="width:50%"></div></div>
+                    </div>
+                    <div class="level-badge">Intermédiaire</div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// SOURCES</div>
+                    <ul class="sidebar-sources">
+                        <li><a href="https://scapy.net" target="_blank"><i class="fas fa-external-link-alt"></i> Documentation Scapy</a></li>
+                        <li><a href="https://docs.python.org/3/library/socket.html" target="_blank"><i class="fas fa-external-link-alt"></i> Python socket docs</a></li>
+                        <li><a href="https://npcap.com" target="_blank"><i class="fas fa-external-link-alt"></i> Npcap (Windows)</a></li>
+                        <li><a href="https://tools.ietf.org/html/rfc793" target="_blank"><i class="fas fa-external-link-alt"></i> RFC 793 — TCP</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+        </div><!-- /article-layout -->
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <span class="logo-bracket">[</span><span>BAALI LHOUSSAINE</span><span class="logo-bracket">]</span>
+            </div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Matrix canvas
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const chars = '0123456789ABCDEF<>{}[]|+=/*%ΩΨΦΣΠαβγ';
+        const fs = 13; let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            ctx.fillStyle = 'rgba(2,12,7,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.font = fs+'px Share Tech Mono,monospace';
+            for (let i=0;i<drops.length;i++) {
+                ctx.fillStyle = Math.random()>0.97?'#00e5ff':'#00ff6a';
+                ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);
+                if(drops[i]*fs>canvas.height&&Math.random()>0.975)drops[i]=0; drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize',()=>{cols=Math.floor(canvas.width/fs);drops=Array(cols).fill(1);});
+    })();
+
+    // Scroll progress
+    const sp = document.getElementById('scrollProgress');
+    const rp = document.getElementById('readingProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = (t/d*100)+'%';
+        if(sp) sp.style.width = pct;
+        if(rp) rp.style.width = pct;
+    });
+
+    // Mobile nav
+    const ham = document.querySelector('.hamburger');
+    const nav = document.querySelector('.nav-menu');
+    if(ham&&nav) ham.addEventListener('click',()=>{ham.classList.toggle('active');nav.classList.toggle('active');});
+
+    // Theme
+    const tt = document.getElementById('themeToggle');
+    const ti = document.getElementById('themeIcon');
+    const saved = localStorage.getItem('theme')||'dark';
+    applyTheme(saved);
+    if(tt) tt.addEventListener('click',()=>{
+        const cur = document.documentElement.getAttribute('data-theme')||'dark';
+        const next = cur==='dark'?'light':'dark';
+        applyTheme(next); localStorage.setItem('theme',next);
+    });
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme',t);
+        if(ti) ti.className = t==='dark'?'fas fa-sun':'fas fa-moon';
+    }
+
+    // Active TOC on scroll
+    const sections = document.querySelectorAll('.article-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+    window.addEventListener('scroll', () => {
+        let cur = '';
+        sections.forEach(s => { if(window.scrollY >= s.offsetTop - 120) cur = s.id; });
+        tocLinks.forEach(l => {
+            l.classList.remove('active');
+            if(l.getAttribute('href')==='#'+cur) l.classList.add('active');
+        });
+    });
+
+    // Fade in
+    const obs = new IntersectionObserver(e=>e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('fade-in-up');}),{threshold:0.06});
+    document.querySelectorAll('.article-section,.flag-card,.ns-card,.is-step').forEach(el=>obs.observe(el));
+});
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(()=>{
+        btn.innerHTML='<i class="fas fa-check"></i> Copié !';
+        btn.style.color='var(--green-primary)';
+        setTimeout(()=>{btn.innerHTML='<i class="fas fa-copy"></i> Copier';btn.style.color='';},2000);
+    });
+}
+</script>
+</body>
+</html>

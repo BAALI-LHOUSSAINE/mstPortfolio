@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithme de Cantor-Zassenhaus — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="article.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left:'$$',right:'$$',display:true},
+                {left:'\\(',right:'\\)',display:false}
+            ]
+        });"></script>
+    <style>
+        /* ---- math display tweaks ---- */
+        .katex-display { overflow-x: auto; padding: 0.4rem 0; }
+        .math-block {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--cyan-accent);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .math-label {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--cyan-accent);
+            letter-spacing: 2px;
+            margin-bottom: 0.6rem;
+        }
+        /* algo steps */
+        .algo-steps { list-style: none; display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
+        .algo-steps li {
+            display: grid;
+            grid-template-columns: 36px 1fr;
+            gap: 0.8rem;
+            align-items: start;
+        }
+        .step-num {
+            width: 36px; height: 36px;
+            background: var(--green-glow);
+            border: 1px solid var(--green-primary);
+            border-radius: 3px;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 0.9rem;
+            color: var(--green-primary);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .step-content { padding-top: 6px; }
+        .step-content strong { color: var(--text-primary); font-family: var(--font-mono); }
+        .step-content p { margin: 0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+
+        /* complexity table */
+        .cz-table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-family: var(--font-mono); font-size: 0.82rem; }
+        .cz-table th {
+            background: var(--bg-card);
+            color: var(--green-primary);
+            padding: 0.6rem 1rem;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            letter-spacing: 1px;
+        }
+        .cz-table td {
+            padding: 0.55rem 1rem;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+        .cz-table tr:hover td { background: var(--bg-card); }
+        .cz-table td.hl { color: var(--cyan-accent); }
+
+        /* example trace boxes */
+        .trace-box {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem 1.4rem;
+            margin: 1rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.9;
+        }
+        .trace-box .t-comment { color: var(--text-muted); }
+        .trace-box .t-key { color: var(--green-primary); }
+        .trace-box .t-val { color: var(--cyan-accent); }
+        .trace-box .t-result { color: #ffa500; font-weight: bold; }
+
+        /* phase diagram */
+        .phase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .phase-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1.1rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .phase-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+        }
+        .phase-card.p1::before { background: var(--cyan-accent); }
+        .phase-card.p2::before { background: var(--green-primary); }
+        .phase-card.p3::before { background: #ffa500; }
+        .phase-card:hover { border-color: var(--border-active); transform: translateY(-2px); }
+        .phase-num {
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            margin-bottom: 0.4rem;
+        }
+        .p1 .phase-num { color: var(--cyan-accent); }
+        .p2 .phase-num { color: var(--green-primary); }
+        .p3 .phase-num { color: #ffa500; }
+        .phase-card h4 { font-family: var(--font-display); font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: 1px; }
+        .phase-card p  { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+        @media (max-width: 768px) {
+            .phase-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv" class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html" class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+<div class="reading-progress-wrap">
+    <div class="reading-progress-bar" id="readingProgress"></div>
+</div>
+
+<!-- ===================== ARTICLE HERO ===================== -->
+<header class="article-hero">
+    <div class="container">
+        <div class="article-breadcrumb">
+            <a href="articles.html"><i class="fas fa-arrow-left"></i> Articles</a>
+            <span class="bc-sep">/</span>
+            <span>Cryptographie</span>
+        </div>
+
+        <div class="article-hero-meta">
+            <span class="acf-tag crypto"><i class="fas fa-lock"></i> Cryptographie</span>
+            <span class="acf-tag crypto"><i class="fas fa-square-root-alt"></i> Algèbre</span>
+            <span class="article-hero-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+            <span class="article-hero-read"><i class="fas fa-clock"></i> ~20 min de lecture</span>
+        </div>
+
+        <h1 class="article-hero-title glitch" data-text="CANTOR-ZASSENHAUS">
+            CANTOR-ZASSENHAUS
+        </h1>
+        <h2 class="article-hero-subtitle">Factorisation de polynômes sur les corps finis</h2>
+
+        <p class="article-hero-desc">
+            L'algorithme de Cantor-Zassenhaus (1981) est une méthode probabiliste efficace pour factoriser
+            des polynômes sur les corps finis \(\mathbb{F}_q\). Utilisé au cœur de nombreux systèmes cryptographiques,
+            il repose sur des propriétés algébriques profondes : calcul du PGCD, exponentiation modulaire
+            et un tirage aléatoire habile pour séparer les facteurs irréductibles.
+        </p>
+
+        <div class="article-hero-topics">
+            <span class="acf-topic">Corps finis \(\mathbb{F}_q\)</span>
+            <span class="acf-topic">Polynômes irréductibles</span>
+            <span class="acf-topic">PGCD de polynômes</span>
+            <span class="acf-topic">Algorithme probabiliste</span>
+            <span class="acf-topic">Square-free factorisation</span>
+            <span class="acf-topic">DDF / EDF</span>
+            <span class="acf-topic">Cryptographie</span>
+        </div>
+
+        <div class="article-author-bar">
+            <div class="author-avatar">BL</div>
+            <div>
+                <p class="author-name">Baali Lhoussaine</p>
+                <p class="author-role">Master Cryptologie &amp; Sécurité Informatique — FST Al Hoceima</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc-sticky" id="toc">
+    <div class="container">
+        <div class="toc-inner">
+            <span class="toc-label">// SOMMAIRE</span>
+            <nav class="toc-nav">
+                <a href="#intro"      class="toc-link active">Introduction</a>
+                <a href="#prérequis"  class="toc-link">Prérequis</a>
+                <a href="#sqf"        class="toc-link">SQF</a>
+                <a href="#ddf"        class="toc-link">DDF</a>
+                <a href="#edf"        class="toc-link">EDF</a>
+                <a href="#exemple"    class="toc-link">Exemple</a>
+                <a href="#impl"       class="toc-link">Implémentation</a>
+                <a href="#complexite" class="toc-link">Complexité</a>
+                <a href="#apps"       class="toc-link">Applications</a>
+                <a href="#conclusion" class="toc-link">Conclusion</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ARTICLE BODY ===================== -->
+<div class="article-body">
+    <div class="container">
+        <div class="article-layout">
+
+            <!-- ========== MAIN CONTENT ========== -->
+            <main class="article-content">
+
+                <!-- INTRODUCTION -->
+                <section class="article-section" id="intro">
+                    <p class="section-label">// 01 — INTRODUCTION</p>
+                    <h2>Pourquoi factoriser des polynômes ?</h2>
+
+                    <p>
+                        En 1981, David G. Cantor et Hans Zassenhaus publient un algorithme qui révolutionne
+                        le calcul algébrique sur les corps finis. Là où les méthodes déterministes de l'époque
+                        se heurtaient à des coûts exponentiels, Cantor et Zassenhaus proposent une approche
+                        <strong>probabiliste</strong> dont la complexité attendue est polynomiale.
+                    </p>
+
+                    <div class="info-box">
+                        <i class="fas fa-lightbulb" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Contexte historique :</strong> La factorisation de polynômes sur \(\mathbb{F}_q\) est
+                            fondamentale pour construire des corps d'extension, tester l'irréductibilité, ou encore
+                            implémenter des codes correcteurs (Reed-Solomon, BCH) et des protocoles cryptographiques
+                            basés sur les courbes elliptiques.
+                        </div>
+                    </div>
+
+                    <p>
+                        L'algorithme se déroule en <strong>trois grandes phases</strong> successives, chacune
+                        réduisant le problème : supprimer les carrés, regrouper par degré, puis séparer
+                        les facteurs irréductibles de même degré grâce à un tirage aléatoire.
+                    </p>
+
+                    <div class="phase-grid">
+                        <div class="phase-card p1">
+                            <p class="phase-num">PHASE 01</p>
+                            <h4>Square-Free</h4>
+                            <p>Eliminer les facteurs répétés pour obtenir une factorisation sans carrés.</p>
+                        </div>
+                        <div class="phase-card p2">
+                            <p class="phase-num">PHASE 02</p>
+                            <h4>DDF</h4>
+                            <p>Distinct Degree Factorization : regrouper les irréductibles par degré commun.</p>
+                        </div>
+                        <div class="phase-card p3">
+                            <p class="phase-num">PHASE 03</p>
+                            <h4>EDF</h4>
+                            <p>Equal Degree Factorization : séparer les facteurs du même degré par randomisation.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PRÉREQUIS -->
+                <section class="article-section" id="prérequis">
+                    <p class="section-label">// 02 — PRÉREQUIS ALGÉBRIQUES</p>
+                    <h2>Corps finis et anneau de polynômes</h2>
+
+                    <p>
+                        Avant d'entrer dans l'algorithme, rappelons les structures mathématiques en jeu.
+                    </p>
+
+                    <h3>Corps finis \(\mathbb{F}_q\)</h3>
+                    <p>
+                        Un <strong>corps fini</strong> (ou corps de Galois) \(\mathbb{F}_q\) contient exactement
+                        \(q = p^k\) éléments, où \(p\) est un nombre premier (la <em>caractéristique</em>) et
+                        \(k \geq 1\). Ses propriétés clés :
+                    </p>
+                    <ul class="article-list">
+                        <li>Tout élément \(a \in \mathbb{F}_q\) vérifie \(a^q = a\) (Petit théorème de Fermat généralisé).</li>
+                        <li>Le groupe multiplicatif \(\mathbb{F}_q^*\) est cyclique d'ordre \(q-1\).</li>
+                        <li>Caractéristique \(p\) : \((a+b)^p = a^p + b^p\) (morphisme de Frobenius).</li>
+                    </ul>
+
+                    <h3>L'anneau \(\mathbb{F}_q[X]\)</h3>
+                    <p>
+                        L'ensemble des polynômes à coefficients dans \(\mathbb{F}_q\) muni de l'addition et
+                        la multiplication polynomiale forme un <strong>anneau euclidien</strong> : on dispose
+                        d'une division euclidienne et donc d'un algorithme d'Euclide pour calculer le
+                        <strong>PGCD</strong> de deux polynômes.
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// DIVISION EUCLIDIENNE</p>
+                        $$\forall f, g \in \mathbb{F}_q[X],\; g \neq 0 \;\Rightarrow\; \exists!\; q, r \in \mathbb{F}_q[X] \text{ tels que } f = q \cdot g + r,\; \deg r < \deg g$$
+                    </div>
+
+                    <h3>Polynôme irréductible</h3>
+                    <p>
+                        Un polynôme \(f \in \mathbb{F}_q[X]\) de degré \(\geq 1\) est dit <strong>irréductible</strong>
+                        s'il ne peut pas s'écrire comme produit de deux polynômes de degré strictement inférieur.
+                        C'est l'analogue des nombres premiers dans \(\mathbb{Z}\).
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// PROPRIÉTÉ FONDAMENTALE (Frobenius)</p>
+                        $$\text{Si } f \text{ irréductible de degré } d, \text{ alors } \mathbb{F}_q[X]/(f) \cong \mathbb{F}_{q^d}$$
+                        $$\text{et tout élément } \alpha \in \mathbb{F}_{q^d} \text{ vérifie } \alpha^{q^d} = \alpha$$
+                    </div>
+
+                    <div class="warn-box">
+                        <i class="fas fa-exclamation-triangle" style="color:#ffa500;flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Point clé de l'algorithme :</strong> dans \(\mathbb{F}_q[X]/(f)\) où \(f\) est
+                            un produit de \(r\) irréductibles distincts de degré \(d\), le polynôme \(X^{q^d} - X\)
+                            se scinde en \(r\) facteurs linéaires distincts. C'est sur cette observation que repose
+                            toute la phase EDF.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PHASE 1 : SQF -->
+                <section class="article-section" id="sqf">
+                    <p class="section-label">// 03 — PHASE 1 : SQUARE-FREE FACTORIZATION</p>
+                    <h2>Suppression des facteurs répétés</h2>
+
+                    <p>
+                        Un polynôme <strong>sans carré</strong> (square-free) est un polynôme dont tous les
+                        facteurs irréductibles apparaissent avec multiplicité exactement 1. La première phase
+                        ramène tout polynôme à un produit de polynômes sans carré.
+                    </p>
+
+                    <h3>Détection des racines multiples</h3>
+                    <p>
+                        Un polynôme \(f\) admet une racine multiple si et seulement si
+                        \(\gcd(f, f') \neq 1\), où \(f'\) désigne la dérivée formelle de \(f\).
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// CRITÈRE RACINE MULTIPLE</p>
+                        $$f \text{ est sans carré} \iff \gcd(f, f') = 1$$
+                    </div>
+
+                    <h3>Attention à la caractéristique \(p\)</h3>
+                    <p>
+                        En caractéristique \(p\), la dérivée d'un polynôme peut s'annuler pour des raisons
+                        non triviales. En particulier, \((X^p)' = p \cdot X^{p-1} = 0\) dans \(\mathbb{F}_p[X]\).
+                        Ainsi si \(f' = 0\), alors \(f\) est un polynôme en \(X^p\) :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// CAS SPÉCIAL CARACTÉRISTIQUE p</p>
+                        $$f'= 0 \implies f(X) = g(X^p) \implies f(X) = g(X)^p$$
+                        $$\text{(par le morphisme de Frobenius : } (a+b)^p = a^p + b^p \text{)}$$
+                    </div>
+
+                    <p>
+                        Dans ce cas on extrait la "racine p-ième" en appliquant l'inverse du Frobenius sur les
+                        coefficients, puis on recommence récursivement. L'algorithme de Yun (cas \(q = p\)) ou
+                        sa généralisation gère tous ces cas.
+                    </p>
+
+                    <h3>Algorithme SQF (schéma simplifié pour \(q = p\))</h3>
+                    <ol class="algo-steps">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div class="step-content">
+                                <strong>Calculer \(d = \gcd(f, f')\)</strong>
+                                <p>Si \(d = 1\), alors \(f\) est déjà sans carré : retourner \(f\).</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div class="step-content">
+                                <strong>Poser \(w = f/d\)</strong>
+                                <p>\(w\) contient tous les facteurs irréductibles de \(f\), chacun avec multiplicité 1.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div class="step-content">
+                                <strong>Extraire les multiplicités par \(\gcd\) successifs</strong>
+                                <p>Boucle de Yun : \(i = 1, 2, \ldots\), calculer \(\gcd(w, d)\) pour identifier les facteurs de multiplicité \(i\).</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <div class="step-content">
+                                <strong>Traiter le cas \(f' = 0\)</strong>
+                                <p>Extraire \(g\) tel que \(f = g(X^p)\), puis appliquer récursivement SQF à \(g\).</p>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="info-box">
+                        <i class="fas fa-info-circle" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Résultat :</strong> On obtient \(f = \prod_i f_i^i\) où chaque \(f_i\) est sans carré
+                            (et peut être 1). Les phases suivantes s'appliquent indépendamment à chaque \(f_i\).
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PHASE 2 : DDF -->
+                <section class="article-section" id="ddf">
+                    <p class="section-label">// 04 — PHASE 2 : DISTINCT DEGREE FACTORIZATION</p>
+                    <h2>Regroupement par degré des irréductibles</h2>
+
+                    <p>
+                        On suppose désormais \(f\) sans carré et on cherche à grouper ses facteurs irréductibles
+                        par degré. La DDF exploite une propriété remarquable du Frobenius.
+                    </p>
+
+                    <h3>Propriété clé</h3>
+                    <p>
+                        Dans \(\mathbb{F}_q[X]\), le produit de tous les polynômes irréductibles de degré \(d\)
+                        divise \(X^{q^d} - X\). Plus précisément :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// THÉORÈME FONDAMENTAL DDF</p>
+                        $$X^{q^d} - X \;=\; \prod_{\substack{f \text{ irréd.}\\ \deg f \mid d}} f(X)$$
+                    </div>
+
+                    <p>
+                        Donc pour isoler les facteurs irréductibles de \(f\) ayant <em>exactement</em> le degré \(d\),
+                        on calcule :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// EXTRACTION DU GROUPE DE DEGRÉ d</p>
+                        $$h_d = \gcd\!\left(f,\; X^{q^d} - X\right)$$
+                        $$\text{puis } f_d = h_d \;/\; \prod_{e \mid d,\, e < d} h_e$$
+                    </div>
+
+                    <h3>Algorithme DDF</h3>
+                    <ol class="algo-steps">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div class="step-content">
+                                <strong>Initialiser \(f_{\text{rem}} \leftarrow f\), \(d \leftarrow 1\)</strong>
+                                <p>On va extraire les facteurs de degré 1, 2, 3, … jusqu'à épuisement.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div class="step-content">
+                                <strong>Calculer \(h \leftarrow \gcd(f_{\text{rem}},\; X^{q^d} - X \bmod f_{\text{rem}})\)</strong>
+                                <p>L'exponentiation \(X^{q^d} \bmod f_{\text{rem}}\) s'effectue par exponentiation rapide modulaire.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div class="step-content">
+                                <strong>Si \(h \neq 1\) : stocker \((h, d)\) et poser \(f_{\text{rem}} \leftarrow f_{\text{rem}} / h\)</strong>
+                                <p>\(h\) est le produit de tous les irréductibles de degré exactement \(d\) dans \(f\).</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <div class="step-content">
+                                <strong>Incrémenter \(d \leftarrow d+1\), recommencer tant que \(\deg f_{\text{rem}} \geq 2d\)</strong>
+                                <p>Si \(f_{\text{rem}}\) est encore de degré \(\geq 1\) à la fin, c'est lui-même un irréductible.</p>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="trace-box">
+                        <span class="t-comment">// Exemple : f = X⁵ + X² + 1 sur F₂ (q=2)</span><br>
+                        <span class="t-key">d=1</span> → gcd(f, X²-X) = gcd(f, X²+X) = <span class="t-val">1</span> <span class="t-comment">// aucun facteur linéaire</span><br>
+                        <span class="t-key">d=2</span> → gcd(f, X⁴+X)  = <span class="t-val">X²+X+1</span> <span class="t-comment">// un irréductible de degré 2</span><br>
+                        <span class="t-key">f_rem</span> = f / (X²+X+1) = <span class="t-result">X³+X²+1</span> <span class="t-comment">// irréductible de degré 3</span>
+                    </div>
+                </section>
+
+                <!-- PHASE 3 : EDF -->
+                <section class="article-section" id="edf">
+                    <p class="section-label">// 05 — PHASE 3 : EQUAL DEGREE FACTORIZATION</p>
+                    <h2>Séparation des facteurs de même degré</h2>
+
+                    <p>
+                        Après la DDF, on dispose de blocs \(h_d\) qui sont des produits de \(r\) irréductibles
+                        <em>distincts</em>, chacun de même degré \(d\). La phase EDF les sépare par randomisation.
+                        C'est la partie véritablement probabiliste de l'algorithme.
+                    </p>
+
+                    <h3>Idée mathématique</h3>
+                    <p>
+                        Notons \(h = f_1 \cdots f_r\) le produit de \(r\) irréductibles distincts de degré \(d\).
+                        Par le <strong>théorème chinois des restes</strong> (CRT) :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// ISOMORPHISME CRT</p>
+                        $$\mathbb{F}_q[X]/(h) \;\cong\; \mathbb{F}_{q^d} \times \cdots \times \mathbb{F}_{q^d} \quad (r \text{ fois})$$
+                    </div>
+
+                    <p>
+                        On tire un polynôme aléatoire \(T \in \mathbb{F}_q[X]\) de degré \(< \deg h\). Dans
+                        chacune des \(r\) copies de \(\mathbb{F}_{q^d}\), l'image de \(T\) est un élément aléatoire.
+                        On calcule alors :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// L'EXPOSANT MAGIQUE (cas p impair)</p>
+                        $$S \;=\; T^{(q^d - 1)/2} \bmod h$$
+                        $$\text{Chaque composante vaut } \left(\frac{T \bmod f_i}{\mathbb{F}_{q^d}}\right) \in \{-1, 0, +1\}$$
+                    </div>
+
+                    <p>
+                        Dans chaque copie \(\mathbb{F}_{q^d}\), \(S\) vaut \(+1\), \(-1\), ou \(0\) avec des
+                        probabilités qui dépendent de la valeur de \(T\) dans cette copie. Les \(r\) composantes
+                        se répartissent <em>indépendamment</em> entre \(\{+1\}\) et \(\{-1, 0\}\), ce qui
+                        permet de séparer via :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// SÉPARATION PAR PGCD</p>
+                        $$g_1 = \gcd(S - 1,\; h), \quad g_2 = \gcd(S + 1,\; h)$$
+                        $$\text{Si } 1 < \deg g_1 < \deg h \;\Rightarrow\; \text{séparation non triviale !}$$
+                    </div>
+
+                    <h3>Cas \(p = 2\) (corps de caractéristique 2)</h3>
+                    <p>
+                        La formule \((q^d-1)/2\) ne s'applique plus car \(q = 2^k\). On utilise alors la
+                        <strong>trace de Frobenius</strong> :
+                    </p>
+
+                    <div class="math-block">
+                        <p class="math-label">// TRACE — CAS CARACTÉRISTIQUE 2</p>
+                        $$S = \text{Tr}(T) = T + T^q + T^{q^2} + \cdots + T^{q^{d-1}} \bmod h$$
+                        $$\text{puis } g = \gcd(S,\; h)$$
+                    </div>
+
+                    <p>
+                        \(\text{Tr}\) envoie \(\mathbb{F}_{q^d}\) sur \(\mathbb{F}_q\) et est un morphisme
+                        \(\mathbb{F}_q\)-linéaire surjectif. Dans chaque composante, \(\text{Tr}(T \bmod f_i)\)
+                        vaut 0 ou un élément non nul de \(\mathbb{F}_q\) de manière aléatoire, permettant
+                        à nouveau la séparation.
+                    </p>
+
+                    <h3>Algorithme EDF complet</h3>
+                    <ol class="algo-steps">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div class="step-content">
+                                <strong>Si \(\deg h = d\) : \(h\) est irréductible, retourner \(\{h\}\)</strong>
+                                <p>Cas de base de la récursion.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div class="step-content">
+                                <strong>Tirer \(T\) aléatoire de degré \(< \deg h\)</strong>
+                                <p>Les coefficients sont choisis uniformément dans \(\mathbb{F}_q\).</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div class="step-content">
+                                <strong>Calculer \(S\) (exposant ou trace selon la caractéristique)</strong>
+                                <p>Par exponentiation rapide : \(O(\log(q^d) \cdot \text{M}(n))\) opérations.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <div class="step-content">
+                                <strong>Calculer \(g = \gcd(S \pm 1,\; h)\)</strong>
+                                <p>Si \(g\) est non trivial, on a séparé \(h\) en \(g\) et \(h/g\). Récursion sur chaque morceau.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">5</span>
+                            <div class="step-content">
+                                <strong>Si \(g = 1\) ou \(g = h\) : retirer au hasard et recommencer depuis l'étape 2</strong>
+                                <p>La probabilité d'échec par essai est \(\leq 1/2\), donc on converge rapidement.</p>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="math-block">
+                        <p class="math-label">// PROBABILITÉ DE SUCCÈS (p impair)</p>
+                        $$P[\text{séparation non triviale}] \;\geq\; 1 - \frac{2^r - 2}{q^d - 1} \;\geq\; \frac{1}{2}$$
+                        $$\text{Nombre d'essais attendus : } O(r) \text{ pour factoriser complètement}$$
+                    </div>
+                </section>
+
+                <!-- EXEMPLE COMPLET -->
+                <section class="article-section" id="exemple">
+                    <p class="section-label">// 06 — EXEMPLE TRACÉ COMPLET</p>
+                    <h2>Factorisation de \(X^6 - 1\) sur \(\mathbb{F}_3\)</h2>
+
+                    <p>
+                        Déroulons l'algorithme pas à pas sur \(f(X) = X^6 - 1 \in \mathbb{F}_3[X]\) (\(q = 3\)).
+                    </p>
+
+                    <h3>Étape 1 — Square-Free Factorization</h3>
+                    <div class="trace-box">
+                        <span class="t-comment">// f(X) = X⁶ - 1 = X⁶ + 2  (dans F₃, -1 ≡ 2)</span><br>
+                        <span class="t-key">f'(X)</span> = 6X⁵ = 0  <span class="t-comment">// en car. 3, 6 ≡ 0 → f'=0 !</span><br>
+                        <span class="t-comment">// Cas f'=0 : f(X) = g(X³) avec g(X) = X²-1</span><br>
+                        <span class="t-key">g(X)</span> = X² - 1 = X² + 2<br>
+                        <span class="t-key">g'(X)</span> = 2X  → gcd(g, g') = <span class="t-val">1</span><br>
+                        <span class="t-result">→ g est sans carré. f = g(X)³ = (X²-1)³</span>
+                    </div>
+
+                    <h3>Étape 2 — DDF sur \(g(X) = X^2 - 1\)</h3>
+                    <div class="trace-box">
+                        <span class="t-comment">// q=3, chercher facteurs de degré d=1</span><br>
+                        <span class="t-key">X^q - X</span> = X³ - X = X(X-1)(X+1) = X(X+2)(X+1)<br>
+                        <span class="t-key">gcd(X²-1, X³-X)</span> = gcd(X²-1, X(X+1)(X-1))<br>
+                        <span class="t-comment">// X²-1 = (X-1)(X+1), et X³-X est div. par ces deux</span><br>
+                        <span class="t-result">→ h₁ = X²-1 = (X-1)(X+1)</span> <span class="t-comment">// deux facteurs de degré 1</span>
+                    </div>
+
+                    <h3>Étape 3 — EDF sur \(h_1 = (X-1)(X+1)\), \(d=1\)</h3>
+                    <div class="trace-box">
+                        <span class="t-comment">// r=2 facteurs de degré d=1. Tirer T aléatoire de degré &lt; 2</span><br>
+                        <span class="t-key">T</span> = X + 1  <span class="t-comment">(tirage aléatoire)</span><br>
+                        <span class="t-key">S</span> = T^((3-1)/2) mod h₁ = (X+1)^1 mod (X²-1) = X+1<br>
+                        <span class="t-key">gcd(S-1, h₁)</span> = gcd(X, X²-1) = <span class="t-val">1</span> <span class="t-comment">// échec</span><br>
+                        <span class="t-comment">// Nouveau tirage : T = X</span><br>
+                        <span class="t-key">S</span> = X^1 mod (X²-1) = X<br>
+                        <span class="t-key">gcd(X-1, X²-1)</span> = <span class="t-result">X-1</span> ✓<br>
+                        <span class="t-key">h₁ / (X-1)</span> = <span class="t-result">X+1</span> ✓
+                    </div>
+
+                    <h3>Résultat final</h3>
+                    <div class="math-block">
+                        <p class="math-label">// FACTORISATION COMPLÈTE</p>
+                        $$X^6 - 1 = (X-1)^3 \cdot (X+1)^3 \quad \text{dans } \mathbb{F}_3[X]$$
+                        $$\text{c'est-à-dire : } (X+2)^3 \cdot (X+1)^3$$
+                    </div>
+                </section>
+
+                <!-- IMPLÉMENTATION -->
+                <section class="article-section" id="impl">
+                    <p class="section-label">// 07 — IMPLÉMENTATION PYTHON</p>
+                    <h2>Code commenté avec SageMath / Python</h2>
+
+                    <p>
+                        Voici une implémentation pédagogique des trois phases en Python pur (arithmétique
+                        sur les polynômes représentés comme listes de coefficients). En pratique on utilisera
+                        <code>SageMath</code> ou la bibliothèque <code>sympy</code>.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">cantor_zassenhaus.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#569cd6">from</span> sympy <span style="color:#569cd6">import</span> GF, Poly, factor_list, gcd
+<span style="color:#569cd6">from</span> sympy.abc <span style="color:#569cd6">import</span> x
+<span style="color:#569cd6">import</span> random
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Utilitaires de base sur F_q[X]</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">poly_powmod</span>(f, exp, mod, field):
+    <span style="color:#ce9178">"""Calcule f^exp mod 'mod' dans field[x] par exponentiation rapide."""</span>
+    result = Poly(<span style="color:#b5cea8">1</span>, x, domain=field)
+    base   = f <span style="color:#569cd6">% </span>mod
+    <span style="color:#569cd6">while</span> exp > <span style="color:#b5cea8">0</span>:
+        <span style="color:#569cd6">if</span> exp & <span style="color:#b5cea8">1</span>:
+            result = (result * base) % mod
+        base = (base * base) % mod
+        exp >>= <span style="color:#b5cea8">1</span>
+    <span style="color:#569cd6">return</span> result
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Phase 1 : Square-Free (simplifiée)</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">square_free_factor</span>(f, q, field):
+    <span style="color:#ce9178">"""Retourne le polynôme sans carré associé à f."""</span>
+    df = f.diff()
+    <span style="color:#569cd6">if</span> df == <span style="color:#b5cea8">0</span>:           <span style="color:#6a9955"># f' = 0 : f est un p-ième</span>
+        p = field.characteristic()
+        <span style="color:#6a9955"># Extraire g tel que f = g(X^p)</span>
+        coeffs = f.all_coeffs()
+        <span style="color:#6a9955"># ... (logique d'extraction de racine p-ième)</span>
+        <span style="color:#569cd6">pass</span>
+    g = gcd(f, df)
+    <span style="color:#569cd6">return</span> Poly(f / g, x, domain=field)
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Phase 2 : Distinct Degree Factorization</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">ddf</span>(f, q, field):
+    <span style="color:#ce9178">"""
+    Entrée  : f sans carré, q = card(F_q)
+    Sortie  : liste de (h_d, d) où h_d = prod irréd. de degré d dans f
+    """</span>
+    factors = []
+    X = Poly(x, x, domain=field)
+    f_rem = f
+    xpow  = X           <span style="color:#6a9955"># va stocker X^(q^d) mod f_rem</span>
+    d     = <span style="color:#b5cea8">1</span>
+
+    <span style="color:#569cd6">while</span> f_rem.degree() >= <span style="color:#b5cea8">2</span> * d:
+        xpow = poly_powmod(xpow, q, f_rem, field)  <span style="color:#6a9955"># X^(q^d)</span>
+        h    = gcd(f_rem, xpow - X)
+        <span style="color:#569cd6">if</span> h.degree() > <span style="color:#b5cea8">0</span>:
+            factors.append((h, d))
+            f_rem = Poly(f_rem / h, x, domain=field)
+        d += <span style="color:#b5cea8">1</span>
+
+    <span style="color:#569cd6">if</span> f_rem.degree() > <span style="color:#b5cea8">0</span>:
+        factors.append((f_rem, f_rem.degree()))  <span style="color:#6a9955"># irréductible restant</span>
+    <span style="color:#569cd6">return</span> factors
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Phase 3 : Equal Degree Factorization (CZ)</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">edf</span>(h, d, q, field):
+    <span style="color:#ce9178">"""
+    Sépare h (produit de r irréductibles distincts de degré d) en facteurs.
+    Algorithme probabiliste de Cantor-Zassenhaus.
+    """</span>
+    r = h.degree() // d
+    <span style="color:#569cd6">if</span> r == <span style="color:#b5cea8">1</span>:
+        <span style="color:#569cd6">return</span> [h]
+
+    factors = [h]
+    <span style="color:#569cd6">while</span> <span style="color:#dcdcaa">len</span>(factors) < r:
+        <span style="color:#6a9955"># Tirage aléatoire</span>
+        deg_T = h.degree() - <span style="color:#b5cea8">1</span>
+        coeffs = [field.convert(random.randint(<span style="color:#b5cea8">0</span>, q-<span style="color:#b5cea8">1</span>)) <span style="color:#569cd6">for</span> _ <span style="color:#569cd6">in</span> <span style="color:#dcdcaa">range</span>(deg_T+<span style="color:#b5cea8">1</span>)]
+        T = Poly(coeffs, x, domain=field)
+
+        p = field.characteristic()
+        <span style="color:#569cd6">if</span> p == <span style="color:#b5cea8">2</span>:
+            <span style="color:#6a9955"># Trace de Frobenius</span>
+            S = Poly(<span style="color:#b5cea8">0</span>, x, domain=field)
+            xpow_T = T
+            <span style="color:#569cd6">for</span> _ <span style="color:#569cd6">in</span> <span style="color:#dcdcaa">range</span>(d):
+                S = (S + xpow_T) % h
+                xpow_T = poly_powmod(xpow_T, q, h, field)
+        <span style="color:#569cd6">else</span>:
+            <span style="color:#6a9955"># Exposant (q^d - 1) / 2</span>
+            exp = (q**d - <span style="color:#b5cea8">1</span>) // <span style="color:#b5cea8">2</span>
+            S   = poly_powmod(T, exp, h, field) - Poly(<span style="color:#b5cea8">1</span>, x, domain=field)
+
+        <span style="color:#6a9955"># Tentative de séparation</span>
+        <span style="color:#569cd6">new_factors</span> = []
+        <span style="color:#569cd6">for</span> fac <span style="color:#569cd6">in</span> factors:
+            g = gcd(S % fac, fac)
+            <span style="color:#569cd6">if</span> <span style="color:#b5cea8">0</span> < g.degree() < fac.degree():
+                new_factors.extend([g, Poly(fac / g, x, domain=field)])
+            <span style="color:#569cd6">else</span>:
+                new_factors.append(fac)
+        factors = new_factors
+
+    <span style="color:#569cd6">return</span> factors
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Algorithme principal</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">cantor_zassenhaus</span>(f, q):
+    <span style="color:#ce9178">"""
+    Factorise f dans F_q[X].
+    Retourne une liste de polynômes irréductibles (avec multiplicités).
+    """</span>
+    field   = GF(q)
+    f_poly  = Poly(f, x, domain=field)
+    sqf     = square_free_factor(f_poly, q, field)
+    ddf_res = ddf(sqf, q, field)
+    result  = []
+    <span style="color:#569cd6">for</span> (h, d) <span style="color:#569cd6">in</span> ddf_res:
+        result.extend(edf(h, d, q, field))
+    <span style="color:#569cd6">return</span> result
+
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+<span style="color:#6a9955">#  Test rapide avec SageMath (syntaxe Sage)</span>
+<span style="color:#6a9955"># ─────────────────────────────────────────────</span>
+
+<span style="color:#6a9955">## Sage : </span>
+<span style="color:#6a9955">## R.&lt;x&gt; = GF(3)[]</span>
+<span style="color:#6a9955">## f = x^6 - 1</span>
+<span style="color:#6a9955">## f.factor()</span>
+<span style="color:#6a9955">## → (x + 2)^3 * (x + 1)^3</span>
+</pre>
+                    </div>
+
+                    <div class="info-box" style="margin-top:1.5rem">
+                        <i class="fas fa-terminal" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Avec SageMath :</strong> la fonction <code>f.factor()</code> sur un polynôme
+                            dans <code>GF(q)[]</code> implémente exactement Cantor-Zassenhaus. C'est la méthode
+                            de référence utilisée dans les calculs cryptographiques sérieux.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COMPLEXITÉ -->
+                <section class="article-section" id="complexite">
+                    <p class="section-label">// 08 — ANALYSE DE COMPLEXITÉ</p>
+                    <h2>Coût algorithmique</h2>
+
+                    <p>
+                        Notons \(n = \deg f\), \(q\) la taille du corps, et \(\text{M}(n)\) le coût de la
+                        multiplication de deux polynômes de degré \(n\) (en opérations élémentaires dans \(\mathbb{F}_q\)).
+                    </p>
+
+                    <table class="cz-table">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Opération dominante</th>
+                                <th>Complexité</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>SQF</strong></td>
+                                <td>PGCD + dérivée</td>
+                                <td class="hl">O(n²)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>DDF</strong></td>
+                                <td>Exponentiation \(X^{q^d} \bmod f\)</td>
+                                <td class="hl">O(n² log q)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>EDF</strong> (attendu)</td>
+                                <td>Exponentiation + PGCD, par tirage</td>
+                                <td class="hl">O(n² log q) attendu</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td>—</td>
+                                <td class="hl">O(n² log q) attendu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p>
+                        Avec des algorithmes de multiplication rapide (FFT polynomiale) on atteint
+                        \(O(n^{1+\epsilon} \log q)\) pour tout \(\epsilon > 0\).
+                        La phase EDF est <strong>probabiliste</strong> : le nombre d'essais pour séparer
+                        \(r\) facteurs est \(O(r)\) en espérance, ce qui reste polynomial en \(n\).
+                    </p>
+
+                    <div class="warn-box">
+                        <i class="fas fa-question-circle" style="color:#ffa500;flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Pourquoi probabiliste ?</strong> Il n'existe pas (à ce jour) d'algorithme
+                            déterministe polynomial connu pour la phase EDF en général. La variante déterministe
+                            de Berlekamp est plus lente (\(O(n^3)\)) mais ne nécessite pas de tirage aléatoire.
+                            Cantor-Zassenhaus est préféré en pratique pour sa vitesse.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- APPLICATIONS -->
+                <section class="article-section" id="apps">
+                    <p class="section-label">// 09 — APPLICATIONS CRYPTOGRAPHIQUES</p>
+                    <h2>Où retrouve-t-on cet algorithme ?</h2>
+
+                    <h3>Construction de corps d'extension</h3>
+                    <p>
+                        Pour travailler dans \(\mathbb{F}_{2^{128}}\) (AES, GCM), on a besoin d'un polynôme
+                        irréductible de degré 128 sur \(\mathbb{F}_2\). Cantor-Zassenhaus permet de
+                        <strong>tester l'irréductibilité</strong> et de trouver de tels polynômes rapidement.
+                    </p>
+
+                    <h3>Codes correcteurs d'erreurs (BCH, Reed-Solomon)</h3>
+                    <p>
+                        Les codes BCH sont définis par leurs <strong>polynômes générateurs</strong>, eux-mêmes
+                        produits de polynômes irréductibles sur \(\mathbb{F}_{2^m}\). La construction et le
+                        décodage exploitent la factorisation sur des corps finis.
+                    </p>
+
+                    <h3>Courbes elliptiques sur \(\mathbb{F}_p\)</h3>
+                    <p>
+                        Le comptage de points (algorithme de Schoof, SEA) requiert la factorisation de
+                        <strong>polynômes de division</strong> sur des corps finis, dont les facteurs
+                        irréductibles correspondent aux sous-groupes de torsion de la courbe.
+                    </p>
+
+                    <h3>Cryptographie basée sur les réseaux et les polynômes</h3>
+                    <p>
+                        Dans NTRU et les schémas à base de treillis polynomiaux, les opérations de
+                        décomposition dans \(\mathbb{Z}_q[X]/(f)\) font appel à la factorisation de \(f\)
+                        modulo des premiers \(q\), via des variantes de Cantor-Zassenhaus.
+                    </p>
+
+                    <div class="takeaways">
+                        <h3><i class="fas fa-check-circle"></i> &nbsp;POINTS CLÉS À RETENIR</h3>
+                        <ul class="article-list checklist">
+                            <li>L'algorithme opère en 3 phases indépendantes : SQF → DDF → EDF.</li>
+                            <li>La phase EDF est probabiliste mais converge en \(O(r)\) essais en espérance.</li>
+                            <li>Le morphisme de Frobenius \(a \mapsto a^q\) est au cœur de chaque phase.</li>
+                            <li>La complexité totale attendue est \(O(n^2 \log q)\), polynomiale en \(n\).</li>
+                            <li>C'est l'algorithme de référence implémenté dans SageMath, NTL, FLINT.</li>
+                            <li>Il est indispensable à la cryptographie sur courbes elliptiques et aux codes BCH.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- CONCLUSION -->
+                <section class="article-section" id="conclusion">
+                    <p class="section-label">// 10 — CONCLUSION</p>
+                    <h2>Bilan et perspectives</h2>
+
+                    <p>
+                        L'algorithme de Cantor-Zassenhaus illustre parfaitement la puissance des méthodes
+                        <strong>probabilistes</strong> en algorithmique algébrique : en acceptant une infime
+                        probabilité d'échec par essai, on obtient un algorithme pratiquement aussi rapide
+                        que possible. Les quarante ans qui ont suivi sa publication n'ont pas produit
+                        d'algorithme déterministe significativement plus rapide pour la factorisation générale
+                        sur les corps finis.
+                    </p>
+
+                    <p>
+                        Ses trois phases — suppression des carrés, regroupement par degré, séparation
+                        aléatoire — sont devenues le modèle standard de tout algorithme de factorisation
+                        de polynômes, et ses idées se retrouvent dans des domaines aussi variés que la
+                        cryptographie post-quantique, les codes correcteurs et le calcul formel.
+                    </p>
+
+                    <div class="next-steps">
+                        <div class="ns-card">
+                            <i class="fas fa-code"></i>
+                            <h4>Berlekamp</h4>
+                            <p>Variante déterministe basée sur le noyau de la matrice de Frobenius.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-chart-line"></i>
+                            <h4>Algorithme de Schoof</h4>
+                            <p>Comptage de points sur courbes elliptiques via la factorisation de polynômes de division.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h4>NTRU &amp; réseaux</h4>
+                            <p>Schémas de chiffrement post-quantiques utilisant l'arithmétique dans \(\mathbb{Z}_q[X]/(f)\).</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOTTOM NAV -->
+                <div class="article-nav-bottom">
+                    <a href="articles.html" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Retour aux articles
+                    </a>
+                    <div class="share-buttons">
+                        <span class="share-label">Partager :</span>
+                        <a class="share-btn linkedin" href="https://www.linkedin.com/sharing/share-offsite/?url=cantor_zassenhaus.html" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="share-btn github" href="https://github.com/baali-lhoussaine" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- ========== SIDEBAR ========== -->
+            <aside class="article-sidebar">
+
+                <!-- Author -->
+                <div class="sidebar-card sidebar-author">
+                    <p class="sidebar-card-title">// AUTEUR</p>
+                    <div class="sa-avatar">BL</div>
+                    <p class="sa-name">BAALI LHOUSSAINE</p>
+                    <p class="sa-role">Master Cryptologie &amp;<br>Sécurité Informatique</p>
+                    <div class="sa-links">
+                        <a href="https://github.com/baali-lhoussaine" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="https://linkedin.com" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <!-- Niveau -->
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// NIVEAU</p>
+                    <div class="level-bar-wrap">
+                        <span class="level-label">Mathématiques</span>
+                        <div class="level-bar"><div class="level-fill" style="width:90%"></div></div>
+                        <span class="level-label">Algorithmique</span>
+                        <div class="level-bar"><div class="level-fill" style="width:80%"></div></div>
+                        <span class="level-label">Implémentation</span>
+                        <div class="level-bar"><div class="level-fill" style="width:70%"></div></div>
+                    </div>
+                    <span class="level-badge">Avancé — Bac+4/5</span>
+                </div>
+
+                <!-- Prérequis -->
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// PRÉREQUIS</p>
+                    <div class="sidebar-tech-list">
+                        <span class="tech">Algèbre linéaire</span>
+                        <span class="tech">Corps finis</span>
+                        <span class="tech">Arithmétique modulaire</span>
+                        <span class="tech">PGCD polynômial</span>
+                        <span class="tech">Python</span>
+                    </div>
+                </div>
+
+                <!-- Sources -->
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// SOURCES</p>
+                    <ul class="sidebar-sources">
+                        <li><a href="https://perso.eleves.ens-rennes.fr/people/perrine.jouteur/agreg/cantor_zassenhaus.pdf" target="_blank"><i class="fas fa-external-link-alt"></i> Jouteur — ENS Rennes (PDF)</a></li>
+                        <li><a href="https://en.wikipedia.org/wiki/Cantor%E2%80%93Zassenhaus_algorithm" target="_blank"><i class="fas fa-external-link-alt"></i> Wikipedia EN</a></li>
+                        <li><a href="https://doc.sagemath.org/html/en/reference/polynomial_rings/" target="_blank"><i class="fas fa-external-link-alt"></i> SageMath Polynomials</a></li>
+                        <li><a href="https://shoup.net/ntl/" target="_blank"><i class="fas fa-external-link-alt"></i> NTL Library (Shoup)</a></li>
+                    </ul>
+                </div>
+
+            </aside>
+        </div><!-- .article-layout -->
+    </div><!-- .container -->
+</div><!-- .article-body -->
+
+<!-- ===================== FOOTER ===================== -->
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo"><span class="logo-bracket">[</span><span>BAALI LHOUSSAINE</span><span class="logo-bracket">]</span></div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Matrix canvas
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const chars = '0123456789ABCDEF∂∫∑∏√αβγδεζηθ{}[]|+=/*%ΩΨΦΣΠΛΘΔαβγ';
+        const fs = 13; let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            ctx.fillStyle = isLight ? 'rgba(244,247,245,0.05)' : 'rgba(2,12,7,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fs + 'px Share Tech Mono,monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillStyle = isLight
+                    ? (Math.random() > 0.97 ? '#0077aa' : '#007a33')
+                    : (Math.random() > 0.97 ? '#00e5ff' : '#00ff6a');
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, drops[i] * fs);
+                if (drops[i] * fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize', () => { cols = Math.floor(canvas.width / fs); drops = Array(cols).fill(1); });
+    })();
+
+    // Scroll progress
+    const sp = document.getElementById('scrollProgress');
+    const rp = document.getElementById('readingProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = (t / d * 100) + '%';
+        if (sp) sp.style.width = pct;
+        if (rp) rp.style.width = pct;
+    });
+
+    // Mobile nav
+    const ham = document.querySelector('.hamburger');
+    const nav = document.querySelector('.nav-menu');
+    if (ham && nav) ham.addEventListener('click', () => { ham.classList.toggle('active'); nav.classList.toggle('active'); });
+
+    // Theme
+    const tt = document.getElementById('themeToggle');
+    const ti = document.getElementById('themeIcon');
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+    if (tt) tt.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        applyTheme(next); localStorage.setItem('theme', next);
+    });
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        if (ti) ti.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Active TOC on scroll
+    const sections = document.querySelectorAll('.article-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+    window.addEventListener('scroll', () => {
+        let cur = '';
+        sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) cur = s.id; });
+        tocLinks.forEach(l => {
+            l.classList.remove('active');
+            if (l.getAttribute('href') === '#' + cur) l.classList.add('active');
+        });
+    });
+
+    // Fade in
+    const obs = new IntersectionObserver(e => e.forEach(en => { if (en.isIntersecting) en.target.classList.add('fade-in-up'); }), { threshold: 0.06 });
+    document.querySelectorAll('.article-section, .phase-card, .ns-card').forEach(el => obs.observe(el));
+});
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+        btn.style.color = 'var(--green-primary)';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copier'; btn.style.color = ''; }, 2000);
+    });
+}
+</script>
+</body>
+</html>

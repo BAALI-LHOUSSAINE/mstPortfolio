@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil"  class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos"  class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets"  class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv"       class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html" class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact"  class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <!-- Theme Toggle — add this between </ul> and <div class="hamburger"> -->
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+
+<!-- ===================== HERO ARTICLES ===================== -->
+<section class="articles-hero">
+    <div class="container">
+        <div class="terminal-prompt" style="margin-bottom:1.4rem">
+            <span class="prompt-user">root@security</span><span class="prompt-sep">:</span><span class="prompt-path">~/articles</span><span class="prompt-dollar">$</span>
+            <span class="prompt-cmd">ls -la ./publications</span><span class="prompt-blink">▋</span>
+        </div>
+        <h1 class="articles-page-title glitch" data-text="ARTICLES">ARTICLES</h1>
+        <p class="articles-page-subtitle">Recherches & explorations en cryptologie, sécurité et développement</p>
+
+        <!-- Stats bar -->
+        <div class="articles-stats">
+            <div class="stat-item">
+                <span class="stat-num" id="totalCount">5</span>
+                <span class="stat-label">Articles</span>
+            </div>
+            <div class="stat-sep">|</div>
+            <div class="stat-item">
+                <span class="stat-num">5</span>
+                <span class="stat-label">Publiés</span>
+            </div>
+            <div class="stat-sep">|</div>
+            <div class="stat-item">
+                <span class="stat-num">3</span>
+                <span class="stat-label">Catégories</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== FILTERS ===================== -->
+<section class="articles-filters-bar">
+    <div class="container">
+        <div class="filters-inner">
+            <div class="filter-group">
+                <span class="filter-label">// FILTRER :</span>
+                <button class="filter-btn active" data-filter="all">Tous</button>
+                <button class="filter-btn" data-filter="cryptographie">Cryptographie</button>
+                <button class="filter-btn" data-filter="securite-reseau">Sécurité Réseau</button>
+                <button class="filter-btn" data-filter="deep-learning">Deep Learning</button>
+            </div>
+            <div class="search-group">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher un article..." />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== ARTICLES GRID ===================== -->
+<section class="articles-main section">
+    <div class="container">
+
+        <div class="articles-grid-full" id="articlesGrid">
+
+            <!-- Article 1 — Cantor-Zassenhaus -->
+            <article id="article-1" class="article-card article-card-full" data-category="cryptographie" onclick="window.location.href='zessenhaus.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-lock"></i> Cryptographie</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Algorithme de Cantor-Zassenhaus</h3>
+                <p class="article-excerpt">L'algorithme de Cantor-Zassenhaus (1981) est une méthode probabiliste efficace pour factoriser des polynômes sur les corps finis F_q. Utilisé au cœur de nombreux systèmes cryptographiques, il repose sur le calcul du PGCD, l'exponentiation modulaire et un tirage aléatoire habile pour séparer les facteurs irréductibles.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-read-time"><i class="fas fa-clock"></i> ~20 min</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 2 — Attaque WPS -->
+            <article id="article-2" class="article-card article-card-full" data-category="securite-reseau" onclick="window.location.href='wps.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-wifi"></i> Sécurité Réseau</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> 2025</span>
+                </div>
+                <h3 class="article-title">Simulateur d'Attaque WPS — Brute-Force PIN</h3>
+                <p class="article-excerpt">Analyse approfondie des vulnérabilités du protocole Wi-Fi Protected Setup (WPS), du fonctionnement mathématique du brute-force PIN, et implémentation d'un simulateur complet en Python pour visualiser chaque phase de l'attaque dans un environnement contrôlé.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-read-time"><i class="fas fa-clock"></i> ~22 min</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 3 — Attaque par Saturation DoS/DDoS -->
+            <article id="article-3" class="article-card article-card-full" data-category="securite-reseau" onclick="window.location.href='saturation.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-bolt"></i> Sécurité Réseau</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Attaques par Saturation — DoS, DDoS & SYN Flood</h3>
+                <p class="article-excerpt">Les attaques par saturation (Denial of Service) figurent parmi les menaces les plus répandues. Cet article détaille leurs mécanismes techniques, leurs variantes (volumétriques, protocolaires, applicatives), les outils de détection et les contre-mesures défensives avec des illustrations concrètes en Python et Scapy.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-read-time"><i class="fas fa-clock"></i> ~22 min</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 4 — Scapy / Sockets -->
+            <article id="article-4" class="article-card article-card-full" data-category="securite-reseau" onclick="window.location.href='scapy.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-network-wired"></i> Sécurité Réseau</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Analyse Réseau : Sockets & Sniffing avec Scapy</h3>
+                <p class="article-excerpt">De la programmation socket bas-niveau au sniffing de paquets avec Scapy : cet article couvre les fondamentaux de l'analyse réseau en Python, la dissection des couches TCP/IP, la capture de trafic et les techniques de scan offensif en environnement contrôlé.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-read-time"><i class="fas fa-clock"></i> ~18 min</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 5 — Neural Networks / Iris -->
+            <article id="article-5" class="article-card article-card-full" data-category="deep-learning" onclick="window.location.href='neural_networks.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-brain"></i> Deep Learning</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Neural Networks — Lab Iris avec Keras</h3>
+                <p class="article-excerpt">Fondements théoriques des réseaux de neurones artificiels — neurone formel, rétropropagation, fonctions d'activation — mis en pratique dans un laboratoire complet : classification des fleurs Iris en 3 espèces avec TensorFlow/Keras, de la donnée brute jusqu'à la matrice de confusion.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-read-time"><i class="fas fa-clock"></i> ~25 min</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+        </div>
+
+        <!-- Empty state (hidden by default) -->
+        <div class="no-results" id="noResults" style="display:none">
+            <i class="fas fa-search"></i>
+            <p>Aucun article trouvé pour cette recherche.</p>
+            <button onclick="resetFilters()">Réinitialiser les filtres</button>
+        </div>
+
+
+
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <span class="logo-bracket">[</span>
+                <span>BAALI LHOUSSAINE</span>
+                <span class="logo-bracket">]</span>
+            </div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Notification toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ===== MATRIX =====
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+        const chars = '0123456789ABCDEF<>{}[]|+=/*%$#@!?ΩΨΦΣΠΛΘΔαβγ';
+        const fs = 13;
+        let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            ctx.fillStyle = isLight ? 'rgba(244,247,245,0.05)' : 'rgba(2,12,7,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fs + 'px Share Tech Mono, monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillStyle = isLight
+                    ? (Math.random() > 0.97 ? '#0077aa' : '#007a33')
+                    : (Math.random() > 0.97 ? '#00e5ff' : '#00ff6a');
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, drops[i] * fs);
+                if (drops[i] * fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize', () => { cols = Math.floor(canvas.width / fs); drops = Array(cols).fill(1); });
+    })();
+
+    // ===== SCROLL PROGRESS =====
+    const sp = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        if (sp) sp.style.width = (t / d * 100) + '%';
+    });
+
+    // ===== MOBILE NAV =====
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+    }
+
+    // ===== FILTER BUTTONS =====
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        });
+    });
+
+    // ===== SEARCH =====
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    function applyFilters() {
+        const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+        const query = (searchInput?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('.article-card-full');
+        let visible = 0;
+        cards.forEach(card => {
+            const cat = card.dataset.category;
+            const text = card.textContent.toLowerCase();
+            const matchCat = activeFilter === 'all' || cat === activeFilter;
+            const matchSearch = !query || text.includes(query);
+            card.style.display = (matchCat && matchSearch) ? '' : 'none';
+            if (matchCat && matchSearch) visible++;
+        });
+        document.getElementById('totalCount').textContent = visible;
+        document.getElementById('noResults').style.display = visible === 0 ? 'flex' : 'none';
+    }
+
+    // ===== THEME TOGGLE =====
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    applyTheme(savedTheme);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            localStorage.setItem('theme', next);
+        });
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (themeIcon) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+
+    // ===== DEEP LINK — open article from URL hash =====
+    (function handleHash() {
+        const hash = window.location.hash; // e.g. "#article-1"
+        if (!hash) return;
+        const target = document.querySelector(hash);
+        if (!target) return;
+        // Open the body
+        const body = target.querySelector('.article-body');
+        const hint = target.querySelector('.article-toggle-hint');
+        const icon = hint ? hint.querySelector('i') : null;
+        if (body) body.style.display = 'block';
+        if (icon) icon.className = 'fas fa-chevron-up';
+        if (hint) hint.style.color = 'var(--green-primary)';
+        // Scroll to it after a short delay so the page has painted
+        setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.style.boxShadow = '0 0 0 2px var(--green-primary)';
+            setTimeout(() => { target.style.boxShadow = ''; }, 2000);
+        }, 300);
+    })();
+
+    // ===== FADE IN =====
+    const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('fade-in-up'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.article-card-full').forEach(el => obs.observe(el));
+});
+
+function notifyMe(el) {
+    showToast('✓ Vous serez notifié à la publication !');
+    el.innerHTML = '<i class="fas fa-check"></i> Notifié';
+    el.style.color = 'var(--green-primary)';
+    el.style.pointerEvents = 'none';
+}
+
+function resetFilters() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+    const si = document.getElementById('searchInput');
+    if (si) si.value = '';
+    document.querySelectorAll('.article-card-full').forEach(c => c.style.display = '');
+    document.getElementById('noResults').style.display = 'none';
+    document.getElementById('totalCount').textContent = document.querySelectorAll('.article-card-full').length;
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== APERÇU TOGGLE =====
+function toggleArticle(card) {
+    const body = card.querySelector('.article-body');
+    const hint = card.querySelector('.article-toggle-hint');
+    const icon = hint ? hint.querySelector('i') : null;
+    if (!body) return;
+    const isOpen = body.style.display !== 'none' && body.style.display !== '';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (icon) icon.className = isOpen ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+    if (hint) hint.style.color = isOpen ? '' : 'var(--green-primary)';
+}
+</script>
+</body>
+</html>

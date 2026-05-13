@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Networks — Lab Iris — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="article.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Neural network diagram ── */
+        .nn-diagram {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2rem 1rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+        .nn-diagram svg { display: block; margin: 0 auto; }
+
+        /* ── Layer cards ── */
+        .layer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .layer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+            transition: var(--transition);
+        }
+        .layer-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            border-radius: 4px 4px 0 0;
+        }
+        .layer-card.lc-input::before  { background: var(--cyan-accent); }
+        .layer-card.lc-hidden::before { background: var(--green-primary); }
+        .layer-card.lc-output::before { background: #ffa500; }
+        .layer-card:hover { border-color: var(--border-active); transform: translateY(-2px); }
+        .layer-type {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            letter-spacing: 2px;
+            margin-bottom: 0.4rem;
+        }
+        .lc-input  .layer-type { color: var(--cyan-accent); }
+        .lc-hidden .layer-type { color: var(--green-primary); }
+        .lc-output .layer-type { color: #ffa500; }
+        .layer-card h4 {
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        .layer-card p {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* ── Concept cards ── */
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .concept-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1.2rem;
+            transition: var(--transition);
+        }
+        .concept-card:hover { border-color: var(--border-active); }
+        .concept-card .cc-icon {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .concept-card h4 {
+            font-family: var(--font-display);
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        .concept-card p {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin: 0;
+        }
+        .concept-card code {
+            font-size: 0.76rem;
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            padding: 1px 5px;
+            border-radius: 2px;
+            color: var(--cyan-accent);
+        }
+
+        /* ── Activation function visual ── */
+        .activ-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.2rem 0;
+        }
+        .activ-card {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.9rem 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+        .activ-card .ac-name { color: var(--green-primary); font-weight: 700; margin-bottom: 0.3rem; }
+        .activ-card .ac-formula { color: var(--cyan-accent); margin-bottom: 0.4rem; font-size: 0.73rem; }
+        .activ-card .ac-use { color: var(--text-muted); font-size: 0.72rem; line-height: 1.5; }
+
+        /* ── Step algo ── */
+        .algo-steps { list-style: none; display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
+        .algo-steps li { display: grid; grid-template-columns: 36px 1fr; gap: 0.8rem; align-items: start; }
+        .step-num {
+            width: 36px; height: 36px;
+            background: var(--green-glow);
+            border: 1px solid var(--green-primary);
+            border-radius: 3px;
+            font-family: var(--font-display);
+            font-weight: 900; font-size: 0.9rem;
+            color: var(--green-primary);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .step-content { padding-top: 6px; }
+        .step-content strong { color: var(--text-primary); font-family: var(--font-mono); }
+        .step-content p { margin: 0.2rem 0 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+
+        /* ── Metrics table ── */
+        .metrics-table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-family: var(--font-mono); font-size: 0.82rem; }
+        .metrics-table th { background: var(--bg-card); color: var(--green-primary); padding: 0.6rem 1rem; text-align: left; border: 1px solid var(--border-color); letter-spacing: 1px; }
+        .metrics-table td { padding: 0.55rem 1rem; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .metrics-table tr:hover td { background: var(--bg-card); }
+        .metrics-table td.hl { color: var(--cyan-accent); }
+        .metrics-table td.ok { color: var(--green-primary); font-weight: 700; }
+
+        /* ── Lab notebook callout ── */
+        .lab-box {
+            background: linear-gradient(135deg, rgba(0,255,106,0.04), rgba(0,229,255,0.04));
+            border: 1px solid rgba(0,255,106,0.2);
+            border-radius: 4px;
+            padding: 1.4rem 1.6rem;
+            margin: 1.5rem 0;
+        }
+        .lab-box-title {
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            letter-spacing: 2px;
+            color: var(--green-primary);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .lab-box p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8; margin: 0; }
+
+        /* ── Confusion matrix visual ── */
+        .cm-grid {
+            display: grid;
+            grid-template-columns: 90px repeat(3, 80px);
+            gap: 3px;
+            margin: 1.2rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+        }
+        .cm-header { background: transparent; color: var(--green-primary); display: flex; align-items: center; justify-content: center; padding: 6px; }
+        .cm-label { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 8px 4px; text-align: center; }
+        .cm-cell { border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; padding: 10px 4px; font-weight: 700; font-size: 0.9rem; }
+        .cm-diag { background: rgba(0,255,106,0.12); color: var(--green-primary); border-color: rgba(0,255,106,0.3); }
+        .cm-off  { background: var(--bg-terminal); color: var(--text-muted); }
+
+        /* ── Experiment table ── */
+        .exp-table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: 0.82rem; }
+        .exp-table th { background: var(--bg-card); color: var(--cyan-accent); padding: 0.6rem 1rem; text-align: left; border: 1px solid var(--border-color); font-family: var(--font-mono); letter-spacing: 1px; font-size: 0.72rem; }
+        .exp-table td { padding: 0.55rem 1rem; border: 1px solid var(--border-color); color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.78rem; }
+        .exp-table tr:hover td { background: var(--bg-card); }
+        .exp-table td code { font-size: 0.76rem; background: var(--bg-terminal); border: 1px solid var(--border-color); padding: 1px 5px; border-radius: 2px; color: var(--cyan-accent); }
+
+        @media (max-width: 768px) {
+            .layer-grid   { grid-template-columns: 1fr 1fr; }
+            .concept-grid { grid-template-columns: 1fr; }
+            .activ-grid   { grid-template-columns: 1fr; }
+            .cm-grid      { grid-template-columns: 70px repeat(3, 65px); font-size: 0.65rem; }
+        }
+        @media (max-width: 480px) {
+            .layer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv"      class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html"      class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+<div class="reading-progress-wrap">
+    <div class="reading-progress-bar" id="readingProgress"></div>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<header class="article-hero">
+    <div class="container">
+        <div class="article-breadcrumb">
+            <a href="articles.html"><i class="fas fa-arrow-left"></i> Articles</a>
+            <span class="bc-sep">/</span>
+            <span>Data Science</span>
+        </div>
+
+        <div class="article-hero-meta">
+            <span class="acf-tag" style="color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25)">
+                <i class="fas fa-brain"></i> Deep Learning
+            </span>
+            <span class="acf-tag" style="color:#10b981;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25)">
+                <i class="fas fa-flask"></i> Lab
+            </span>
+            <span class="article-hero-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+            <span class="article-hero-read"><i class="fas fa-clock"></i> ~25 min de lecture</span>
+        </div>
+
+        <h1 class="article-hero-title glitch" data-text="NEURAL NETWORKS">NEURAL NETWORKS</h1>
+        <h2 class="article-hero-subtitle">Fondements théoriques &amp; Lab pratique — Classification Iris avec Keras</h2>
+
+        <p class="article-hero-desc">
+            Un réseau de neurones artificiel est un système de calcul inspiré du cerveau biologique.
+            Cet article couvre les fondements mathématiques des ANN — neurone formel, rétropropagation,
+            fonctions d'activation — puis les met en pratique dans un laboratoire complet : classification
+            des fleurs Iris en 3 espèces avec TensorFlow/Keras, de la donnée brute jusqu'à la matrice
+            de confusion.
+        </p>
+
+        <div class="article-hero-topics">
+            <span class="acf-topic">Perceptron</span>
+            <span class="acf-topic">Backpropagation</span>
+            <span class="acf-topic">ReLU / Softmax</span>
+            <span class="acf-topic">TensorFlow / Keras</span>
+            <span class="acf-topic">Iris Dataset</span>
+            <span class="acf-topic">StandardScaler</span>
+            <span class="acf-topic">One-hot encoding</span>
+            <span class="acf-topic">Confusion Matrix</span>
+        </div>
+
+        <div class="article-author-bar">
+            <div class="author-avatar">BL</div>
+            <div>
+                <p class="author-name">Baali Lhoussaine</p>
+                <p class="author-role">Master Cryptologie &amp; Sécurité Informatique — FST Al Hoceima</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc-sticky" id="toc">
+    <div class="container">
+        <div class="toc-inner">
+            <span class="toc-label">// SOMMAIRE</span>
+            <nav class="toc-nav">
+                <a href="#intro"      class="toc-link active">Intro</a>
+                <a href="#neurone"    class="toc-link">Neurone</a>
+                <a href="#archi"      class="toc-link">Architecture</a>
+                <a href="#activations" class="toc-link">Activations</a>
+                <a href="#backprop"   class="toc-link">Backprop</a>
+                <a href="#lab-data"   class="toc-link">Lab — Données</a>
+                <a href="#lab-model"  class="toc-link">Lab — Modèle</a>
+                <a href="#lab-train"  class="toc-link">Lab — Entraînement</a>
+                <a href="#lab-eval"   class="toc-link">Lab — Évaluation</a>
+                <a href="#lab-pred"   class="toc-link">Lab — Prédiction</a>
+                <a href="#bonus"      class="toc-link">Bonus</a>
+                <a href="#conclusion" class="toc-link">Conclusion</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ARTICLE BODY ===================== -->
+<div class="article-body">
+    <div class="container">
+        <div class="article-layout">
+
+            <!-- ========== MAIN CONTENT ========== -->
+            <main class="article-content">
+
+                <!-- INTRODUCTION -->
+                <section class="article-section" id="intro">
+                    <p class="section-label">// 01 — INTRODUCTION</p>
+                    <h2>Pourquoi les réseaux de neurones ?</h2>
+
+                    <p>
+                        Depuis les années 2010, les <strong>réseaux de neurones profonds</strong> (Deep Neural Networks)
+                        ont transformé l'intelligence artificielle. Reconnaissance d'images, traduction automatique,
+                        détection d'intrusions réseau, génération de texte — presque tous les systèmes d'IA modernes
+                        reposent sur cette architecture.
+                    </p>
+
+                    <div class="info-box">
+                        <i class="fas fa-lightbulb" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Objectif de l'article :</strong> comprendre le fonctionnement interne d'un ANN
+                            (neurone formel, couches, rétropropagation), puis le construire de zéro avec
+                            Keras sur le célèbre dataset Iris — un classique idéal pour débuter.
+                        </div>
+                    </div>
+
+                    <p>
+                        Un réseau de neurones est fondamentalement une <strong>fonction paramétrique</strong>
+                        <code>f(x ; θ)</code> que l'on ajuste (entraîne) pour minimiser une erreur sur des
+                        exemples étiquetés. L'architecture détermine la forme de la fonction ; l'entraînement
+                        en fixe les paramètres.
+                    </p>
+                </section>
+
+                <!-- NEURONE FORMEL -->
+                <section class="article-section" id="neurone">
+                    <p class="section-label">// 02 — LE NEURONE FORMEL</p>
+                    <h2>Unité de base du réseau</h2>
+
+                    <p>
+                        Introduit par McCulloch &amp; Pitts (1943) et formalisé par Rosenblatt (1958),
+                        le <strong>neurone formel</strong> prend plusieurs entrées, calcule une somme pondérée,
+                        y ajoute un biais, puis passe le résultat dans une fonction d'activation.
+                    </p>
+
+                    <!-- SVG neurone -->
+                    <div class="nn-diagram">
+                        <svg viewBox="0 0 560 200" width="560" height="200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+                            <defs>
+                                <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L8,3 z" fill="#00ff6a" opacity="0.7"/>
+                                </marker>
+                            </defs>
+                            <!-- inputs -->
+                            <text x="20" y="52"  font-family="Share Tech Mono,monospace" font-size="13" fill="#00e5ff">x₁</text>
+                            <text x="20" y="102" font-family="Share Tech Mono,monospace" font-size="13" fill="#00e5ff">x₂</text>
+                            <text x="20" y="152" font-family="Share Tech Mono,monospace" font-size="13" fill="#00e5ff">x₃</text>
+                            <!-- input circles -->
+                            <circle cx="55" cy="48"  r="14" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.7"/>
+                            <circle cx="55" cy="98"  r="14" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.7"/>
+                            <circle cx="55" cy="148" r="14" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.7"/>
+                            <!-- weights labels -->
+                            <text x="100" y="72"  font-family="Share Tech Mono,monospace" font-size="11" fill="#a78bfa">w₁</text>
+                            <text x="100" y="97"  font-family="Share Tech Mono,monospace" font-size="11" fill="#a78bfa">w₂</text>
+                            <text x="100" y="135" font-family="Share Tech Mono,monospace" font-size="11" fill="#a78bfa">w₃</text>
+                            <!-- lines to neuron -->
+                            <line x1="69" y1="48"  x2="190" y2="98" stroke="#00e5ff" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
+                            <line x1="69" y1="98"  x2="190" y2="98" stroke="#00e5ff" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
+                            <line x1="69" y1="148" x2="190" y2="98" stroke="#00e5ff" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
+                            <!-- bias arrow from top -->
+                            <text x="228" y="28" font-family="Share Tech Mono,monospace" font-size="11" fill="#ffa500">b</text>
+                            <line x1="234" y1="32" x2="234" y2="72" stroke="#ffa500" stroke-width="1.5" opacity="0.7" marker-end="url(#arr)"/>
+                            <!-- sum neuron -->
+                            <circle cx="234" cy="98" r="28" fill="rgba(0,255,106,0.06)" stroke="#00ff6a" stroke-width="2"/>
+                            <text x="222" y="93"  font-family="Share Tech Mono,monospace" font-size="14" fill="#00ff6a">Σ</text>
+                            <text x="218" y="109" font-family="Share Tech Mono,monospace" font-size="10" fill="#00ff6a">+bias</text>
+                            <!-- line to activation -->
+                            <line x1="262" y1="98" x2="310" y2="98" stroke="#00ff6a" stroke-width="1.5" opacity="0.7" marker-end="url(#arr)"/>
+                            <!-- activation box -->
+                            <rect x="310" y="74" width="80" height="48" rx="4" fill="rgba(0,229,255,0.06)" stroke="#00e5ff" stroke-width="1.5"/>
+                            <text x="325" y="95"  font-family="Share Tech Mono,monospace" font-size="11" fill="#00e5ff">f(z)</text>
+                            <text x="316" y="112" font-family="Share Tech Mono,monospace" font-size="9"  fill="#00e5ff">activation</text>
+                            <!-- output line -->
+                            <line x1="390" y1="98" x2="438" y2="98" stroke="#00ff6a" stroke-width="1.5" opacity="0.7" marker-end="url(#arr)"/>
+                            <!-- output circle -->
+                            <circle cx="455" cy="98" r="18" fill="rgba(255,165,0,0.08)" stroke="#ffa500" stroke-width="1.5"/>
+                            <text x="445" y="103" font-family="Share Tech Mono,monospace" font-size="12" fill="#ffa500">ŷ</text>
+                            <!-- formula bottom -->
+                            <text x="60" y="185" font-family="Share Tech Mono,monospace" font-size="11" fill="#6b7280">z = w₁x₁ + w₂x₂ + w₃x₃ + b</text>
+                            <text x="60" y="200" font-family="Share Tech Mono,monospace" font-size="11" fill="#6b7280">ŷ = f(z)</text>
+                        </svg>
+                    </div>
+
+                    <p>
+                        Mathématiquement, pour un neurone avec <em>n</em> entrées :
+                    </p>
+
+                    <div class="math-block" style="background:var(--bg-terminal);border:1px solid var(--border-color);border-left:3px solid var(--cyan-accent);border-radius:4px;padding:1.2rem 1.5rem;margin:1.5rem 0;font-family:var(--font-mono)">
+                        <p style="font-size:0.68rem;color:var(--cyan-accent);letter-spacing:2px;margin-bottom:0.6rem">// CALCUL DU NEURONE</p>
+                        <p style="color:var(--text-secondary);font-size:0.9rem;line-height:2">
+                            z &nbsp;= &nbsp;w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + … + w<sub>n</sub>x<sub>n</sub> + b &nbsp;= &nbsp;<strong style="color:var(--green-primary)">W·x + b</strong>
+                            <br>
+                            ŷ &nbsp;= &nbsp;<strong style="color:var(--cyan-accent)">f(z)</strong> &nbsp;&nbsp; où f est la fonction d'activation
+                        </p>
+                    </div>
+
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:var(--cyan-accent)"><i class="fas fa-balance-scale"></i></span>
+                            <h4>Poids (Weights)</h4>
+                            <p>Paramètres apprenables <code>w_i</code>. Indiquent l'importance de chaque entrée. Initialisés aléatoirement, ajustés par la descente de gradient.</p>
+                        </div>
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:#ffa500"><i class="fas fa-sliders-h"></i></span>
+                            <h4>Biais (Bias)</h4>
+                            <p>Terme additionnel <code>b</code>. Permet de décaler la fonction d'activation — indépendamment des entrées. Crucial pour la flexibilité du modèle.</p>
+                        </div>
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:var(--green-primary)"><i class="fas fa-wave-square"></i></span>
+                            <h4>Pré-activation z</h4>
+                            <p>Somme pondérée avant la non-linéarité. En notation vectorielle : <code>z = W·x + b</code>. Peut être positif ou négatif, sans borne.</p>
+                        </div>
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:#a78bfa"><i class="fas fa-bolt"></i></span>
+                            <h4>Activation f(z)</h4>
+                            <p>Non-linéarité appliquée sur <code>z</code>. Sans elle, un réseau multicouche serait équivalent à une seule couche linéaire.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ARCHITECTURE -->
+                <section class="article-section" id="archi">
+                    <p class="section-label">// 03 — ARCHITECTURE DU RÉSEAU</p>
+                    <h2>Couches et connexions</h2>
+
+                    <p>
+                        Un <strong>réseau de neurones fully-connected</strong> (Dense) est organisé en couches.
+                        Chaque neurone d'une couche est connecté à <em>tous</em> les neurones de la couche suivante.
+                        L'architecture utilisée dans notre lab Iris :
+                    </p>
+
+                    <div class="layer-grid">
+                        <div class="layer-card lc-input">
+                            <p class="layer-type">INPUT LAYER</p>
+                            <h4>4 neurones</h4>
+                            <p>Sepal Length<br>Sepal Width<br>Petal Length<br>Petal Width</p>
+                        </div>
+                        <div class="layer-card lc-hidden">
+                            <p class="layer-type">HIDDEN LAYER 1</p>
+                            <h4>8 neurones</h4>
+                            <p>Activation : ReLU<br>Params : 8×4 + 8 = 40</p>
+                        </div>
+                        <div class="layer-card lc-hidden">
+                            <p class="layer-type">HIDDEN LAYER 2</p>
+                            <h4>8 neurones</h4>
+                            <p>Activation : ReLU<br>Params : 8×8 + 8 = 72</p>
+                        </div>
+                        <div class="layer-card lc-output">
+                            <p class="layer-type">OUTPUT LAYER</p>
+                            <h4>3 neurones</h4>
+                            <p>Activation : Softmax<br>Params : 3×8 + 3 = 27<br><em>→ 1 par classe</em></p>
+                        </div>
+                    </div>
+
+                    <!-- SVG réseau complet -->
+                    <div class="nn-diagram" style="padding:1.5rem 0.5rem">
+                        <svg viewBox="0 0 620 240" width="620" height="240" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+                            <!-- Layer labels -->
+                            <text x="55"  y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="10" fill="#00e5ff" letter-spacing="1">INPUT</text>
+                            <text x="210" y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="10" fill="#00ff6a" letter-spacing="1">HIDDEN 1</text>
+                            <text x="380" y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="10" fill="#00ff6a" letter-spacing="1">HIDDEN 2</text>
+                            <text x="545" y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="10" fill="#ffa500" letter-spacing="1">OUTPUT</text>
+
+                            <!-- Input neurons (4) -->
+                            <circle cx="55" cy="55"  r="16" fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.5"/>
+                            <circle cx="55" cy="100" r="16" fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.5"/>
+                            <circle cx="55" cy="145" r="16" fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.5"/>
+                            <circle cx="55" cy="190" r="16" fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.5"/>
+                            <text x="55" y="59"  text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00e5ff">x₁</text>
+                            <text x="55" y="104" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00e5ff">x₂</text>
+                            <text x="55" y="149" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00e5ff">x₃</text>
+                            <text x="55" y="194" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#00e5ff">x₄</text>
+
+                            <!-- Hidden 1 neurons (8) — compact -->
+                            <circle cx="210" cy="38"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="67"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="96"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="125" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="154" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="183" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="210" cy="212" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3" opacity="0.5" stroke-dasharray="4"/>
+                            <text x="210" y="228" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">+2</text>
+
+                            <!-- Hidden 2 neurons (8) -->
+                            <circle cx="380" cy="38"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="67"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="96"  r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="125" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="154" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="183" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3"/>
+                            <circle cx="380" cy="212" r="13" fill="rgba(0,255,106,0.08)" stroke="#00ff6a" stroke-width="1.3" opacity="0.5" stroke-dasharray="4"/>
+                            <text x="380" y="228" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">+2</text>
+
+                            <!-- Output neurons (3) -->
+                            <circle cx="545" cy="75"  r="16" fill="rgba(255,165,0,0.10)" stroke="#ffa500" stroke-width="1.5"/>
+                            <circle cx="545" cy="122" r="16" fill="rgba(255,165,0,0.10)" stroke="#ffa500" stroke-width="1.5"/>
+                            <circle cx="545" cy="169" r="16" fill="rgba(255,165,0,0.10)" stroke="#ffa500" stroke-width="1.5"/>
+                            <text x="545" y="79"  text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" fill="#ffa500">Set</text>
+                            <text x="545" y="126" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" fill="#ffa500">Ver</text>
+                            <text x="545" y="173" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" fill="#ffa500">Vir</text>
+
+                            <!-- Connections input→h1 (sample) -->
+                            <line x1="71" y1="55"  x2="197" y2="38"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="55"  x2="197" y2="67"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="55"  x2="197" y2="96"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="55"  x2="197" y2="125" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="55"  x2="197" y2="154" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="55"  x2="197" y2="183" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="100" x2="197" y2="38"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="100" x2="197" y2="96"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="100" x2="197" y2="154" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="145" x2="197" y2="67"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="145" x2="197" y2="125" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="145" x2="197" y2="183" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="190" x2="197" y2="38"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="190" x2="197" y2="96"  stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="190" x2="197" y2="154" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="71" y1="190" x2="197" y2="183" stroke="#00e5ff" stroke-width="0.6" opacity="0.2"/>
+                            <!-- h1→h2 (sample) -->
+                            <line x1="223" y1="38"  x2="367" y2="38"  stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="38"  x2="367" y2="96"  stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="67"  x2="367" y2="125" stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="96"  x2="367" y2="67"  stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="125" x2="367" y2="154" stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="154" x2="367" y2="183" stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <line x1="223" y1="183" x2="367" y2="96"  stroke="#00ff6a" stroke-width="0.6" opacity="0.2"/>
+                            <!-- h2→output (sample) -->
+                            <line x1="393" y1="38"  x2="529" y2="75"  stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="67"  x2="529" y2="75"  stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="96"  x2="529" y2="122" stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="125" x2="529" y2="122" stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="154" x2="529" y2="169" stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="183" x2="529" y2="169" stroke="#ffa500" stroke-width="0.8" opacity="0.3"/>
+                            <line x1="393" y1="38"  x2="529" y2="169" stroke="#ffa500" stroke-width="0.8" opacity="0.15"/>
+                            <line x1="393" y1="183" x2="529" y2="75"  stroke="#ffa500" stroke-width="0.8" opacity="0.15"/>
+
+                            <!-- param counts -->
+                            <text x="130" y="236" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">40 params</text>
+                            <text x="295" y="236" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">72 params</text>
+                            <text x="465" y="236" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">27 params</text>
+                            <text x="310" y="10"  text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" fill="#6b7280">Total : 139 paramètres</text>
+                        </svg>
+                    </div>
+
+                    <div class="warn-box">
+                        <i class="fas fa-calculator" style="color:#ffa500;flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Compter les paramètres :</strong> pour une couche Dense(n_in → n_out),
+                            le nombre de paramètres est <code>n_in × n_out + n_out</code> (poids + biais).
+                            Notre réseau Iris : <code>40 + 72 + 27 = 139 paramètres</code> apprenables — minuscule mais suffisant.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ACTIVATION FUNCTIONS -->
+                <section class="article-section" id="activations">
+                    <p class="section-label">// 04 — FONCTIONS D'ACTIVATION</p>
+                    <h2>Non-linéarité : le secret de la puissance</h2>
+
+                    <p>
+                        Sans fonctions d'activation non-linéaires, un réseau multicouches serait
+                        <em>algébriquement équivalent</em> à une seule couche linéaire, quelque soit sa profondeur.
+                        Les fonctions d'activation donnent au réseau sa capacité à modéliser des frontières
+                        de décision complexes.
+                    </p>
+
+                    <div class="activ-grid">
+                        <div class="activ-card">
+                            <p class="ac-name">ReLU</p>
+                            <p class="ac-formula">f(z) = max(0, z)</p>
+                            <p class="ac-use">Par défaut pour les couches cachées. Rapide, évite le vanishing gradient. Problème : "dying ReLU" si z ≪ 0.</p>
+                        </div>
+                        <div class="activ-card">
+                            <p class="ac-name">Softmax</p>
+                            <p class="ac-formula">σ(z)ᵢ = eᶻⁱ / Σ eᶻʲ</p>
+                            <p class="ac-use">Couche de sortie multi-classe. Convertit les scores bruts en probabilités qui somment à 1. Idéal pour classification.</p>
+                        </div>
+                        <div class="activ-card">
+                            <p class="ac-name">Sigmoid</p>
+                            <p class="ac-formula">f(z) = 1 / (1 + e⁻ᶻ)</p>
+                            <p class="ac-use">Sortie binaire (0 à 1). Souffre du vanishing gradient pour les réseaux profonds. Remplacée par ReLU en pratique.</p>
+                        </div>
+                        <div class="activ-card">
+                            <p class="ac-name">Tanh</p>
+                            <p class="ac-formula">f(z) = (eᶻ - e⁻ᶻ) / (eᶻ + e⁻ᶻ)</p>
+                            <p class="ac-use">Sortie centrée en 0 (-1 à +1). Meilleure que Sigmoid pour couches cachées, mais supplantée par ReLU.</p>
+                        </div>
+                        <div class="activ-card">
+                            <p class="ac-name">Leaky ReLU</p>
+                            <p class="ac-formula">f(z) = z si z&gt;0, αz sinon</p>
+                            <p class="ac-use">Variante de ReLU (α ≈ 0.01). Corrige le problème "dying ReLU" en laissant passer un petit gradient négatif.</p>
+                        </div>
+                        <div class="activ-card">
+                            <p class="ac-name">Linear</p>
+                            <p class="ac-formula">f(z) = z</p>
+                            <p class="ac-use">Pas de non-linéarité. Utilisé uniquement en régression (couche de sortie) ou comme base de comparaison.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="fas fa-check-circle" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Choix pour notre lab Iris :</strong> <code>ReLU</code> sur les couches cachées
+                            (rapide, pas de vanishing gradient), <code>Softmax</code> sur la couche de sortie
+                            (3 classes → probabilités). C'est la combinaison standard pour la classification
+                            multi-classe.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BACKPROP -->
+                <section class="article-section" id="backprop">
+                    <p class="section-label">// 05 — ENTRAÎNEMENT & RÉTROPROPAGATION</p>
+                    <h2>Comment le réseau apprend</h2>
+
+                    <p>
+                        L'entraînement consiste à ajuster les poids <strong>W</strong> et biais <strong>b</strong>
+                        pour minimiser une fonction de perte <em>L</em> qui mesure l'écart entre la prédiction
+                        du réseau et la vérité terrain.
+                    </p>
+
+                    <h3>Fonction de perte — Categorical Cross-Entropy</h3>
+
+                    <div class="math-block" style="background:var(--bg-terminal);border:1px solid var(--border-color);border-left:3px solid var(--cyan-accent);border-radius:4px;padding:1.2rem 1.5rem;margin:1.5rem 0;font-family:var(--font-mono)">
+                        <p style="font-size:0.68rem;color:var(--cyan-accent);letter-spacing:2px;margin-bottom:0.6rem">// CATEGORICAL CROSS-ENTROPY</p>
+                        <p style="color:var(--text-secondary);font-size:0.9rem;line-height:2">
+                            L(y, ŷ) = &minus; Σ<sub>c</sub> y<sub>c</sub> · log(ŷ<sub>c</sub>)
+                            <br><span style="color:var(--text-muted);font-size:0.78rem">y = label one-hot vrai, ŷ = probabilités prédites par Softmax</span>
+                        </p>
+                    </div>
+
+                    <h3>Descente de gradient et Adam</h3>
+                    <p>
+                        La descente de gradient met à jour les poids dans la direction opposée au gradient de la perte :
+                    </p>
+
+                    <div class="math-block" style="background:var(--bg-terminal);border:1px solid var(--border-color);border-left:3px solid var(--green-primary);border-radius:4px;padding:1.2rem 1.5rem;margin:1.5rem 0;font-family:var(--font-mono)">
+                        <p style="font-size:0.68rem;color:var(--green-primary);letter-spacing:2px;margin-bottom:0.6rem">// MISE À JOUR DES POIDS</p>
+                        <p style="color:var(--text-secondary);font-size:0.9rem;line-height:2.2">
+                            W ← W &minus; η · <strong style="color:var(--green-primary)">∂L/∂W</strong>
+                            <br><span style="color:var(--text-muted);font-size:0.78rem">η = learning rate (taux d'apprentissage)</span>
+                        </p>
+                    </div>
+
+                    <p>
+                        L'optimiseur <strong>Adam</strong> (Adaptive Moment Estimation) adapte automatiquement
+                        le learning rate pour chaque paramètre — il est quasi-universellement préféré à la SGD
+                        simple pour les réseaux denses.
+                    </p>
+
+                    <h3>La rétropropagation (Backpropagation)</h3>
+                    <ol class="algo-steps">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div class="step-content">
+                                <strong>Forward pass</strong>
+                                <p>Calculer la sortie du réseau couche par couche : z = Wx+b, puis a = f(z). Stocker les activations intermédiaires.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div class="step-content">
+                                <strong>Calcul de la perte</strong>
+                                <p>Comparer la sortie ŷ avec le label vrai y via L(y, ŷ). Ce scalaire quantifie l'erreur sur ce batch.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div class="step-content">
+                                <strong>Backward pass (règle de la chaîne)</strong>
+                                <p>Propager le gradient ∂L/∂W de la sortie vers l'entrée couche par couche, via la règle de dérivation en chaîne.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">4</span>
+                            <div class="step-content">
+                                <strong>Mise à jour des paramètres</strong>
+                                <p>Adam ajuste W et b en utilisant les gradients calculés et leur historique (moments du 1er et 2ème ordre).</p>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="info-box">
+                        <i class="fas fa-redo" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Epoch :</strong> une passe complète sur tout le dataset d'entraînement.
+                            <strong>Batch :</strong> sous-ensemble de données traité en une seule mise à jour.
+                            Notre lab utilise 80 epochs et des batches de 16 exemples.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== LAB ===== -->
+                <div class="lab-box">
+                    <p class="lab-box-title"><i class="fas fa-flask"></i> &nbsp;LAB — IRIS FLOWER CLASSIFICATION</p>
+                    <p>Les 7 sections suivantes reproduisent fidèlement le notebook Jupyter <code>iris_lab.ipynb</code>.
+                    Chaque cellule est expliquée en détail. Objectif : classer 3 espèces de fleurs (Setosa, Versicolor, Virginica)
+                    à partir de 4 mesures morphologiques, avec un ANN entraîné sous TensorFlow/Keras.</p>
+                </div>
+
+                <!-- LAB — STEP 1 -->
+                <section class="article-section" id="lab-data">
+                    <p class="section-label">// 06 — LAB : ÉTAPES 1, 2 & 3 — DONNÉES</p>
+                    <h2>Installation, exploration et prétraitement</h2>
+
+                    <h3>Étape 1 — Imports</h3>
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_1_imports.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#6a9955"># Installer les dépendances (si nécessaire)</span>
+!pip install tensorflow scikit-learn matplotlib seaborn --quiet
+
+<span style="color:#569cd6">import</span> numpy <span style="color:#569cd6">as</span> np
+<span style="color:#569cd6">import</span> matplotlib.pyplot <span style="color:#569cd6">as</span> plt
+<span style="color:#569cd6">import</span> seaborn <span style="color:#569cd6">as</span> sns
+
+<span style="color:#569cd6">from</span> sklearn.datasets        <span style="color:#569cd6">import</span> load_iris
+<span style="color:#569cd6">from</span> sklearn.model_selection  <span style="color:#569cd6">import</span> train_test_split
+<span style="color:#569cd6">from</span> sklearn.preprocessing    <span style="color:#569cd6">import</span> StandardScaler
+<span style="color:#569cd6">from</span> sklearn.metrics          <span style="color:#569cd6">import</span> confusion_matrix, classification_report
+
+<span style="color:#569cd6">import</span> tensorflow <span style="color:#569cd6">as</span> tf
+<span style="color:#569cd6">from</span> tensorflow.keras.models  <span style="color:#569cd6">import</span> Sequential
+<span style="color:#569cd6">from</span> tensorflow.keras.layers  <span style="color:#569cd6">import</span> Dense
+<span style="color:#569cd6">from</span> tensorflow.keras.utils   <span style="color:#569cd6">import</span> to_categorical
+
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'✅ TensorFlow {tf.__version__}'</span>)
+</pre>
+                    </div>
+
+                    <h3>Étape 2 — Explorer le dataset Iris</h3>
+                    <p>
+                        Le dataset Iris (Fisher, 1936) est l'un des plus utilisés en ML.
+                        Il contient <strong>150 exemples</strong> : 50 par classe, 4 features continues.
+                    </p>
+
+                    <table class="metrics-table">
+                        <thead>
+                            <tr><th>Feature</th><th>Description</th><th>Min</th><th>Max</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="hl">sepal length (cm)</td><td>Longueur du sépale</td><td>4.3</td><td>7.9</td></tr>
+                            <tr><td class="hl">sepal width (cm)</td><td>Largeur du sépale</td><td>2.0</td><td>4.4</td></tr>
+                            <tr><td class="hl">petal length (cm)</td><td>Longueur du pétale</td><td>1.0</td><td>6.9</td></tr>
+                            <tr><td class="hl">petal width (cm)</td><td>Largeur du pétale</td><td>0.1</td><td>2.5</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_2_explore.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+iris        = load_iris()
+X           = iris.data      <span style="color:#6a9955"># (150, 4)</span>
+y           = iris.target    <span style="color:#6a9955"># [0, 1, 2]</span>
+class_names = [<span style="color:#ce9178">'Setosa'</span>, <span style="color:#ce9178">'Versicolor'</span>, <span style="color:#ce9178">'Virginica'</span>]
+
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">'Shape :'</span>, X.shape)            <span style="color:#6a9955"># (150, 4)</span>
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">'Classes :'</span>, class_names)
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">'Par classe :'</span>, np.bincount(y)) <span style="color:#6a9955"># [50 50 50]</span>
+
+<span style="color:#6a9955"># Visualisation : scatter plot sépale vs pétale</span>
+<span style="color:#569cd6">import</span> pandas <span style="color:#569cd6">as</span> pd
+df = pd.DataFrame(X, columns=iris.feature_names)
+df[<span style="color:#ce9178">'species'</span>] = [class_names[i] <span style="color:#569cd6">for</span> i <span style="color:#569cd6">in</span> y]
+
+colors = {<span style="color:#ce9178">'Setosa'</span>: <span style="color:#ce9178">'#6366F1'</span>, <span style="color:#ce9178">'Versicolor'</span>: <span style="color:#ce9178">'#0EA5E9'</span>, <span style="color:#ce9178">'Virginica'</span>: <span style="color:#ce9178">'#10B981'</span>}
+fig, axes = plt.subplots(<span style="color:#b5cea8">1</span>, <span style="color:#b5cea8">2</span>, figsize=(<span style="color:#b5cea8">13</span>, <span style="color:#b5cea8">4</span>))
+<span style="color:#569cd6">for</span> species, color <span style="color:#569cd6">in</span> colors.items():
+    sub = df[df[<span style="color:#ce9178">'species'</span>] == species]
+    axes[<span style="color:#b5cea8">0</span>].scatter(sub[<span style="color:#ce9178">'sepal length (cm)'</span>], sub[<span style="color:#ce9178">'sepal width (cm)'</span>],
+                   label=species, color=color, alpha=<span style="color:#b5cea8">0.7</span>, s=<span style="color:#b5cea8">60</span>)
+    axes[<span style="color:#b5cea8">1</span>].scatter(sub[<span style="color:#ce9178">'petal length (cm)'</span>], sub[<span style="color:#ce9178">'petal width (cm)'</span>],
+                   label=species, color=color, alpha=<span style="color:#b5cea8">0.7</span>, s=<span style="color:#b5cea8">60</span>)
+plt.tight_layout(); plt.show()
+</pre>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="fas fa-eye" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Observation clé :</strong> les features <em>pétale</em> séparent très bien
+                            les classes — Setosa est clairement isolée, Versicolor et Virginica se chevauchent
+                            légèrement. Le réseau devra apprendre cette frontière non-linéaire.
+                        </div>
+                    </div>
+
+                    <h3>Étape 3 — Prétraitement</h3>
+                    <p>
+                        Deux opérations essentielles avant l'entraînement :
+                    </p>
+
+                    <div class="concept-grid">
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:var(--green-primary)"><i class="fas fa-balance-scale-right"></i></span>
+                            <h4>StandardScaler</h4>
+                            <p>Centre chaque feature à μ=0 et la normalise à σ=1.
+                               Sans ça, les gradients seraient déséquilibrés et la convergence serait lente.
+                               <code>fit_transform</code> sur train, <code>transform</code> uniquement sur test.</p>
+                        </div>
+                        <div class="concept-card">
+                            <span class="cc-icon" style="color:var(--cyan-accent)"><i class="fas fa-th"></i></span>
+                            <h4>One-Hot Encoding</h4>
+                            <p>Convertit <code>y=2</code> en vecteur <code>[0, 0, 1]</code>.
+                               Nécessaire car la Softmax produit un vecteur de probabilités —
+                               il faut que la vérité terrain ait le même format pour calculer la cross-entropy.</p>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_3_preprocess.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#6a9955"># Split 80% train / 20% test — stratifié pour garder les proportions</span>
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=<span style="color:#b5cea8">0.2</span>, random_state=<span style="color:#b5cea8">42</span>, stratify=y
+)
+
+<span style="color:#6a9955"># Normalisation : μ=0, σ=1 par feature</span>
+scaler  = StandardScaler()
+X_train = scaler.fit_transform(X_train) <span style="color:#6a9955"># calcule μ,σ sur train puis transforme</span>
+X_test  = scaler.transform(X_test)      <span style="color:#6a9955"># utilise les μ,σ du train uniquement !</span>
+
+<span style="color:#6a9955"># One-hot encoding des labels</span>
+y_train_cat = to_categorical(y_train, num_classes=<span style="color:#b5cea8">3</span>)
+y_test_cat  = to_categorical(y_test,  num_classes=<span style="color:#b5cea8">3</span>)
+
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'Train : {X_train.shape}'</span>)   <span style="color:#6a9955"># (120, 4)</span>
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'Test  : {X_test.shape}'</span>)    <span style="color:#6a9955"># (30, 4)</span>
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'Ex label : {y_train[0]} → {y_train_cat[0]}'</span>)
+<span style="color:#6a9955"># Exemple label : 0 → [1. 0. 0.]</span>
+</pre>
+                    </div>
+
+                    <div class="warn-box">
+                        <i class="fas fa-exclamation-triangle" style="color:#ffa500;flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Data leakage !</strong> Toujours <code>fit</code> le scaler <em>uniquement</em>
+                            sur le train set, jamais sur le test. Appliquer le <code>transform</code> avec les mêmes
+                            paramètres au test set. Sinon vous "fuites" de l'information du test dans l'entraînement.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LAB — MODEL -->
+                <section class="article-section" id="lab-model">
+                    <p class="section-label">// 07 — LAB : ÉTAPE 4 — CONSTRUCTION DU MODÈLE</p>
+                    <h2>Définir l'architecture avec Keras</h2>
+
+                    <p>
+                        Keras offre une API <strong>Sequential</strong> très lisible pour empiler des couches.
+                        Chaque appel à <code>Dense</code> ajoute une couche fully-connected.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_4_model.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+model = Sequential([
+    <span style="color:#6a9955"># Couche 1 : 4 entrées → 8 neurones, activation ReLU</span>
+    Dense(<span style="color:#b5cea8">8</span>, activation=<span style="color:#ce9178">'relu'</span>, input_shape=(<span style="color:#b5cea8">4</span>,), name=<span style="color:#ce9178">'hidden_1'</span>),
+    <span style="color:#6a9955"># Couche 2 : 8 → 8, ReLU</span>
+    Dense(<span style="color:#b5cea8">8</span>, activation=<span style="color:#ce9178">'relu'</span>,              name=<span style="color:#ce9178">'hidden_2'</span>),
+    <span style="color:#6a9955"># Couche de sortie : 8 → 3, Softmax (une proba par classe)</span>
+    Dense(<span style="color:#b5cea8">3</span>, activation=<span style="color:#ce9178">'softmax'</span>,           name=<span style="color:#ce9178">'output'</span>)
+])
+
+model.compile(
+    optimizer=<span style="color:#ce9178">'adam'</span>,                 <span style="color:#6a9955"># Adaptive Moment Estimation</span>
+    loss=<span style="color:#ce9178">'categorical_crossentropy'</span>,  <span style="color:#6a9955"># standard pour multi-classe one-hot</span>
+    metrics=[<span style="color:#ce9178">'accuracy'</span>]
+)
+
+model.summary()
+<span style="color:#6a9955">"""
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)          Output Shape    Param #
+=================================================================
+ hidden_1 (Dense)      (None, 8)       40
+ hidden_2 (Dense)      (None, 8)       72
+ output (Dense)        (None, 3)       27
+=================================================================
+Total params: 139
+"""</span>
+</pre>
+                    </div>
+                </section>
+
+                <!-- LAB — TRAIN -->
+                <section class="article-section" id="lab-train">
+                    <p class="section-label">// 08 — LAB : ÉTAPE 5 & 6 — ENTRAÎNEMENT</p>
+                    <h2>Lancer l'entraînement et visualiser</h2>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_5_train.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+history = model.fit(
+    X_train, y_train_cat,
+    epochs=<span style="color:#b5cea8">80</span>,              <span style="color:#6a9955"># 80 passes sur le dataset</span>
+    batch_size=<span style="color:#b5cea8">16</span>,          <span style="color:#6a9955"># mise à jour tous les 16 exemples</span>
+    validation_split=<span style="color:#b5cea8">0.15</span>, <span style="color:#6a9955"># 15% du train → validation (ne sert PAS à l'entraînement)</span>
+    verbose=<span style="color:#b5cea8">1</span>
+)
+<span style="color:#6a9955"># Output typique :
+# Epoch 80/80
+# 7/7 ━━━━━━━━━━━━━━━━━━━━ 0s 3ms/step
+#   loss: 0.0812 - accuracy: 0.9706 - val_loss: 0.1034 - val_accuracy: 0.9565</span>
+</pre>
+                    </div>
+
+                    <h3>Courbes d'apprentissage (Étape 6)</h3>
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_6_curves.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+fig, axes = plt.subplots(<span style="color:#b5cea8">1</span>, <span style="color:#b5cea8">2</span>, figsize=(<span style="color:#b5cea8">13</span>, <span style="color:#b5cea8">4</span>))
+
+<span style="color:#6a9955"># Accuracy</span>
+axes[<span style="color:#b5cea8">0</span>].plot(history.history[<span style="color:#ce9178">'accuracy'</span>],     label=<span style="color:#ce9178">'Train'</span>,      color=<span style="color:#ce9178">'#6366F1'</span>, lw=<span style="color:#b5cea8">2</span>)
+axes[<span style="color:#b5cea8">0</span>].plot(history.history[<span style="color:#ce9178">'val_accuracy'</span>], label=<span style="color:#ce9178">'Validation'</span>, color=<span style="color:#ce9178">'#10B981'</span>, lw=<span style="color:#b5cea8">2</span>, ls=<span style="color:#ce9178">'--'</span>)
+axes[<span style="color:#b5cea8">0</span>].set_title(<span style="color:#ce9178">'Model Accuracy'</span>); axes[<span style="color:#b5cea8">0</span>].legend(); axes[<span style="color:#b5cea8">0</span>].grid(alpha=<span style="color:#b5cea8">0.3</span>)
+
+<span style="color:#6a9955"># Loss</span>
+axes[<span style="color:#b5cea8">1</span>].plot(history.history[<span style="color:#ce9178">'loss'</span>],     label=<span style="color:#ce9178">'Train'</span>,      color=<span style="color:#ce9178">'#6366F1'</span>, lw=<span style="color:#b5cea8">2</span>)
+axes[<span style="color:#b5cea8">1</span>].plot(history.history[<span style="color:#ce9178">'val_loss'</span>], label=<span style="color:#ce9178">'Validation'</span>, color=<span style="color:#ce9178">'#EF4444'</span>, lw=<span style="color:#b5cea8">2</span>, ls=<span style="color:#ce9178">'--'</span>)
+axes[<span style="color:#b5cea8">1</span>].set_title(<span style="color:#ce9178">'Model Loss'</span>);     axes[<span style="color:#b5cea8">1</span>].legend(); axes[<span style="color:#b5cea8">1</span>].grid(alpha=<span style="color:#b5cea8">0.3</span>)
+
+plt.suptitle(<span style="color:#ce9178">'Training History'</span>, fontsize=<span style="color:#b5cea8">14</span>, fontweight=<span style="color:#ce9178">'bold'</span>)
+plt.tight_layout(); plt.show()
+</pre>
+                    </div>
+
+                    <div class="info-box">
+                        <i class="fas fa-chart-line" style="color:var(--cyan-accent);flex-shrink:0;margin-top:2px"></i>
+                        <div>
+                            <strong>Que chercher sur ces courbes ?</strong>
+                            Un bon entraînement : les courbes train et validation convergent vers le même niveau.
+                            <strong>Overfitting</strong> : la loss train baisse mais la validation remonte.
+                            <strong>Underfitting</strong> : les deux restent élevées. Sur Iris avec 80 epochs, on attend ~97% train, ~95% val.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LAB — EVAL -->
+                <section class="article-section" id="lab-eval">
+                    <p class="section-label">// 09 — LAB : ÉTAPE 7 — ÉVALUATION</p>
+                    <h2>Matrice de confusion et rapport de classification</h2>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_7_evaluate.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#6a9955"># Évaluation globale</span>
+loss, accuracy = model.evaluate(X_test, y_test_cat, verbose=<span style="color:#b5cea8">0</span>)
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'Test Accuracy : {accuracy*100:.1f}%'</span>)   <span style="color:#6a9955"># → ~96.7%</span>
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'Test Loss     : {loss:.4f}'</span>)             <span style="color:#6a9955"># → ~0.08</span>
+
+<span style="color:#6a9955"># Prédictions sur le test set</span>
+y_pred = np.argmax(model.predict(X_test), axis=<span style="color:#b5cea8">1</span>)
+
+<span style="color:#6a9955"># Matrice de confusion</span>
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=<span style="color:#b5cea8">True</span>, fmt=<span style="color:#ce9178">'d'</span>, cmap=<span style="color:#ce9178">'Blues'</span>,
+            xticklabels=class_names, yticklabels=class_names)
+plt.title(<span style="color:#ce9178">'Confusion Matrix'</span>); plt.show()
+
+<span style="color:#6a9955"># Rapport détaillé</span>
+<span style="color:#dcdcaa">print</span>(classification_report(y_test, y_pred, target_names=class_names))
+<span style="color:#6a9955">"""
+              precision  recall  f1-score  support
+   Setosa         1.00    1.00    1.00       10
+Versicolor        0.91    1.00    0.95       10
+ Virginica        1.00    0.90    0.95       10
+  accuracy                        0.97       30
+"""</span>
+</pre>
+                    </div>
+
+                    <h3>Résultats attendus — Matrice de confusion</h3>
+                    <div class="cm-grid">
+                        <div class="cm-header"></div>
+                        <div class="cm-header">Setosa</div>
+                        <div class="cm-header">Versicolor</div>
+                        <div class="cm-header">Virginica</div>
+
+                        <div class="cm-label">Setosa</div>
+                        <div class="cm-cell cm-diag">10</div>
+                        <div class="cm-cell cm-off">0</div>
+                        <div class="cm-cell cm-off">0</div>
+
+                        <div class="cm-label">Versicolor</div>
+                        <div class="cm-cell cm-off">0</div>
+                        <div class="cm-cell cm-diag">10</div>
+                        <div class="cm-cell cm-off" style="color:#ffa500;font-weight:700">1</div>
+
+                        <div class="cm-label">Virginica</div>
+                        <div class="cm-cell cm-off">0</div>
+                        <div class="cm-cell cm-off">0</div>
+                        <div class="cm-cell cm-diag">9</div>
+                    </div>
+
+                    <p>
+                        La diagonale représente les <strong>vrais positifs</strong> — les exemples correctement classés.
+                        Les cases hors diagonale sont les erreurs. Dans cet exemple typique, 1 fleur Virginica
+                        est confondue avec Versicolor, ce qui est cohérent avec leur chevauchement visuel.
+                    </p>
+
+                    <table class="metrics-table">
+                        <thead>
+                            <tr><th>Métrique</th><th>Formule</th><th>Setosa</th><th>Versicolor</th><th>Virginica</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Precision</strong></td>
+                                <td><code>TP / (TP+FP)</code></td>
+                                <td class="ok">1.00</td>
+                                <td class="hl">0.91</td>
+                                <td class="ok">1.00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recall</strong></td>
+                                <td><code>TP / (TP+FN)</code></td>
+                                <td class="ok">1.00</td>
+                                <td class="ok">1.00</td>
+                                <td class="hl">0.90</td>
+                            </tr>
+                            <tr>
+                                <td><strong>F1-Score</strong></td>
+                                <td><code>2·P·R/(P+R)</code></td>
+                                <td class="ok">1.00</td>
+                                <td class="hl">0.95</td>
+                                <td class="hl">0.95</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- LAB — PREDICTION -->
+                <section class="article-section" id="lab-pred">
+                    <p class="section-label">// 10 — LAB : ÉTAPE 8 — PRÉDICTION CUSTOM</p>
+                    <h2>Classifier votre propre fleur</h2>
+
+                    <p>
+                        Une fois le modèle entraîné, prédire une nouvelle observation est trivial.
+                        Il faut <strong>passer par le même scaler</strong> que celui utilisé à l'entraînement.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">step_8_predict.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#6a9955"># ✏️ Modifiez ces valeurs !</span>
+sepal_length = <span style="color:#b5cea8">5.1</span>   <span style="color:#6a9955"># cm</span>
+sepal_width  = <span style="color:#b5cea8">3.5</span>   <span style="color:#6a9955"># cm</span>
+petal_length = <span style="color:#b5cea8">1.4</span>   <span style="color:#6a9955"># cm</span>
+petal_width  = <span style="color:#b5cea8">0.2</span>   <span style="color:#6a9955"># cm</span>
+
+<span style="color:#6a9955"># Mise en forme et normalisation</span>
+sample        = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
+sample_scaled = scaler.transform(sample)     <span style="color:#6a9955"># TOUJOURS normaliser avec le même scaler</span>
+
+<span style="color:#6a9955"># Prédiction → vecteur de probabilités [p_setosa, p_versicolor, p_virginica]</span>
+probs           = model.predict(sample_scaled, verbose=<span style="color:#b5cea8">0</span>)[<span style="color:#b5cea8">0</span>]
+predicted_class = class_names[np.argmax(probs)]
+
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'🌸 Espèce prédite : {predicted_class}'</span>)
+<span style="color:#569cd6">for</span> name, prob <span style="color:#569cd6">in</span> zip(class_names, probs):
+    bar = <span style="color:#ce9178">'█'</span> * <span style="color:#dcdcaa">int</span>(prob * <span style="color:#b5cea8">30</span>)
+    <span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'  {name:<12} {bar:<30} {prob*100:.1f}%'</span>)
+
+<span style="color:#6a9955"># Output :
+# 🌸 Espèce prédite : Setosa
+#   Setosa       ██████████████████████████████  98.7%
+#   Versicolor                                    0.9%
+#   Virginica                                     0.4%</span>
+</pre>
+                    </div>
+                </section>
+
+                <!-- BONUS -->
+                <section class="article-section" id="bonus">
+                    <p class="section-label">// 11 — BONUS — EXPÉRIMENTEZ !</p>
+                    <h2>Modifier l'architecture pour observer les effets</h2>
+
+                    <p>
+                        Le vrai apprentissage passe par l'expérimentation. Voici les modifications suggérées
+                        dans le notebook et leurs effets attendus :
+                    </p>
+
+                    <table class="exp-table">
+                        <thead>
+                            <tr>
+                                <th>Modification</th>
+                                <th>Code</th>
+                                <th>Effet attendu</th>
+                                <th>Risque</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Plus de neurones</strong></td>
+                                <td><code>Dense(32, 'relu')</code></td>
+                                <td>Meilleure capacité de représentation. Peut améliorer l'accuracy sur données complexes.</td>
+                                <td>Overfitting sur petit dataset</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3ème couche cachée</strong></td>
+                                <td><code>Dense(8, 'relu')</code> +1</td>
+                                <td>Réseau plus profond. Sur Iris, effet marginal — trop de capacité pour si peu de données.</td>
+                                <td>Overfitting, plus lent</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Activation Sigmoid</strong></td>
+                                <td><code>'sigmoid'</code></td>
+                                <td>Converge plus lentement. Peut saturer sur grandes valeurs (vanishing gradient).</td>
+                                <td>Sous-performance vs ReLU</td>
+                            </tr>
+                            <tr>
+                                <td><strong>200 epochs</strong></td>
+                                <td><code>epochs=200</code></td>
+                                <td>Observer la courbe de validation remonter progressivement = overfit.</td>
+                                <td>Overfitting probable</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Optimiseur SGD</strong></td>
+                                <td><code>optimizer='sgd'</code></td>
+                                <td>Convergence plus lente et instable sans adaptive learning rate. Besoin de plus d'epochs.</td>
+                                <td>Moins robuste</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dropout</strong></td>
+                                <td><code>Dropout(0.2)</code></td>
+                                <td>Régularisation : désactive aléatoirement 20% des neurones. Réduit l'overfitting.</td>
+                                <td>Peut ralentir la convergence</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="cb-header">
+                            <span class="cb-lang">python</span>
+                            <span class="cb-file">bonus_dropout.py</span>
+                            <button class="cb-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre>
+<span style="color:#569cd6">from</span> tensorflow.keras.layers <span style="color:#569cd6">import</span> Dense, Dropout
+
+<span style="color:#6a9955"># Architecture améliorée avec Dropout (anti-overfitting)</span>
+model_v2 = Sequential([
+    Dense(<span style="color:#b5cea8">32</span>, activation=<span style="color:#ce9178">'relu'</span>, input_shape=(<span style="color:#b5cea8">4</span>,)),
+    Dropout(<span style="color:#b5cea8">0.2</span>),     <span style="color:#6a9955"># désactive 20% des neurones à chaque step</span>
+    Dense(<span style="color:#b5cea8">16</span>, activation=<span style="color:#ce9178">'relu'</span>),
+    Dropout(<span style="color:#b5cea8">0.2</span>),
+    Dense(<span style="color:#b5cea8">3</span>,  activation=<span style="color:#ce9178">'softmax'</span>)
+])
+model_v2.compile(optimizer=<span style="color:#ce9178">'adam'</span>, loss=<span style="color:#ce9178">'categorical_crossentropy'</span>, metrics=[<span style="color:#ce9178">'accuracy'</span>])
+model_v2.fit(X_train, y_train_cat, epochs=<span style="color:#b5cea8">120</span>, batch_size=<span style="color:#b5cea8">16</span>, validation_split=<span style="color:#b5cea8">0.15</span>, verbose=<span style="color:#b5cea8">0</span>)
+
+loss2, acc2 = model_v2.evaluate(X_test, y_test_cat, verbose=<span style="color:#b5cea8">0</span>)
+<span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">f'V2 Test Accuracy : {acc2*100:.1f}%'</span>)
+</pre>
+                    </div>
+                </section>
+
+                <!-- CONCLUSION -->
+                <section class="article-section" id="conclusion">
+                    <p class="section-label">// 12 — CONCLUSION</p>
+                    <h2>Ce que vous avez construit</h2>
+
+                    <p>
+                        En suivant ce lab, vous avez parcouru le cycle complet d'un projet de machine learning :
+                        chargement et exploration des données, normalisation, construction d'un ANN avec Keras,
+                        entraînement avec Adam, visualisation des courbes d'apprentissage, et évaluation via
+                        matrice de confusion et rapport de classification.
+                    </p>
+
+                    <p>
+                        Ce modèle Iris — <strong>139 paramètres seulement</strong> — illustre parfaitement
+                        que la puissance des réseaux de neurones tient à leur architecture et à l'algorithme
+                        de rétropropagation, pas nécessairement à leur taille. Les mêmes principes s'appliquent
+                        aux réseaux de milliards de paramètres comme GPT ou Gemini.
+                    </p>
+
+                    <div class="takeaways">
+                        <h3><i class="fas fa-check-circle"></i> &nbsp;POINTS CLÉS À RETENIR</h3>
+                        <ul class="article-list checklist">
+                            <li>Un neurone formel calcule <code>ŷ = f(Wx + b)</code>. Tous les réseaux en sont composés.</li>
+                            <li>ReLU pour les couches cachées, Softmax pour la sortie multi-classe : combinaison standard.</li>
+                            <li>Toujours normaliser les features avec <code>StandardScaler</code>, en évitant le data leakage.</li>
+                            <li>La rétropropagation + Adam calcule et applique les gradients efficacement.</li>
+                            <li>Surveiller les courbes train vs validation pour détecter overfitting et underfitting.</li>
+                            <li>La matrice de confusion révèle quelles classes sont confondues — plus informative que l'accuracy seule.</li>
+                        </ul>
+                    </div>
+
+                    <div class="next-steps">
+                        <div class="ns-card">
+                            <i class="fas fa-image"></i>
+                            <h4>CNN</h4>
+                            <p>Convolutional Neural Networks pour la classification d'images (MNIST, CIFAR-10).</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-clock"></i>
+                            <h4>LSTM / RNN</h4>
+                            <p>Réseaux récurrents pour les séquences temporelles et le traitement du texte.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h4>ML & Cybersécurité</h4>
+                            <p>Détection d'anomalies réseau, classification de malwares et IDS avec des ANN.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOTTOM NAV -->
+                <div class="article-nav-bottom">
+                    <a href="articles.html" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Retour aux articles
+                    </a>
+                    <div class="share-buttons">
+                        <span class="share-label">Partager :</span>
+                        <a class="share-btn linkedin" href="https://www.linkedin.com/sharing/share-offsite/?url=neural_networks.html" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="share-btn github" href="https://github.com/baali-lhoussaine" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- ========== SIDEBAR ========== -->
+            <aside class="article-sidebar">
+
+                <div class="sidebar-card sidebar-author">
+                    <p class="sidebar-card-title">// AUTEUR</p>
+                    <div class="sa-avatar">BL</div>
+                    <p class="sa-name">BAALI LHOUSSAINE</p>
+                    <p class="sa-role">Master Cryptologie &amp;<br>Sécurité Informatique</p>
+                    <div class="sa-links">
+                        <a href="https://github.com/baali-lhoussaine" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="https://linkedin.com" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// NIVEAU</p>
+                    <div class="level-bar-wrap">
+                        <span class="level-label">Théorie ANN</span>
+                        <div class="level-bar"><div class="level-fill" style="width:80%"></div></div>
+                        <span class="level-label">Keras / TensorFlow</span>
+                        <div class="level-bar"><div class="level-fill" style="width:70%"></div></div>
+                        <span class="level-label">Analyse des résultats</span>
+                        <div class="level-bar"><div class="level-fill" style="width:75%"></div></div>
+                    </div>
+                    <span class="level-badge">Intermédiaire — Bac+3</span>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// STACK</p>
+                    <div class="sidebar-tech-list">
+                        <span class="tech">Python 3.8</span>
+                        <span class="tech">TensorFlow</span>
+                        <span class="tech">Keras</span>
+                        <span class="tech">scikit-learn</span>
+                        <span class="tech">NumPy</span>
+                        <span class="tech">Matplotlib</span>
+                        <span class="tech">Seaborn</span>
+                        <span class="tech">Jupyter</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// SOURCES</p>
+                    <ul class="sidebar-sources">
+                        <li><a href="https://www.tensorflow.org/guide/keras" target="_blank"><i class="fas fa-external-link-alt"></i> TensorFlow — Keras Guide</a></li>
+                        <li><a href="https://scikit-learn.org/stable/modules/neural_networks_supervised.html" target="_blank"><i class="fas fa-external-link-alt"></i> scikit-learn — MLP</a></li>
+                        <li><a href="https://cs231n.github.io/neural-networks-1/" target="_blank"><i class="fas fa-external-link-alt"></i> CS231n — NN Part 1</a></li>
+                        <li><a href="https://arxiv.org/abs/1412.6980" target="_blank"><i class="fas fa-external-link-alt"></i> Adam Optimizer (Kingma 2014)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Notebook download -->
+                <div class="sidebar-card" style="border-color:rgba(0,255,106,0.2)">
+                    <p class="sidebar-card-title">// NOTEBOOK</p>
+                    <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-muted);margin-bottom:0.8rem;line-height:1.6">
+                        Le notebook complet est disponible sur GitHub.
+                    </p>
+                    <a href="https://github.com/baali-lhoussaine" target="_blank"
+                       class="btn btn-outline" style="width:100%;text-align:center;font-size:0.78rem">
+                        <i class="fab fa-github"></i> &nbsp;iris_lab.ipynb
+                    </a>
+                </div>
+
+            </aside>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo"><span class="logo-bracket">[</span><span>BAALI LHOUSSAINE</span><span class="logo-bracket">]</span></div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Matrix canvas
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const chars = '01∂∫∑∏√αβγδεζ{}[]|+=/*%ABCDEF0123456789';
+        const fs = 13; let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            ctx.fillStyle = isLight ? 'rgba(244,247,245,0.05)' : 'rgba(2,12,7,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fs + 'px Share Tech Mono,monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillStyle = isLight
+                    ? (Math.random() > 0.97 ? '#0077aa' : '#007a33')
+                    : (Math.random() > 0.97 ? '#00e5ff' : '#00ff6a');
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, drops[i] * fs);
+                if (drops[i] * fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize', () => { cols = Math.floor(canvas.width / fs); drops = Array(cols).fill(1); });
+    })();
+
+    // Scroll + reading progress
+    const sp = document.getElementById('scrollProgress');
+    const rp = document.getElementById('readingProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = (t / d * 100) + '%';
+        if (sp) sp.style.width = pct;
+        if (rp) rp.style.width = pct;
+    });
+
+    // Mobile nav
+    const ham = document.querySelector('.hamburger');
+    const nav = document.querySelector('.nav-menu');
+    if (ham && nav) ham.addEventListener('click', () => { ham.classList.toggle('active'); nav.classList.toggle('active'); });
+
+    // Theme
+    const tt = document.getElementById('themeToggle');
+    const ti = document.getElementById('themeIcon');
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+    if (tt) tt.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        applyTheme(next); localStorage.setItem('theme', next);
+    });
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        if (ti) ti.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Active TOC
+    const sections = document.querySelectorAll('.article-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+    window.addEventListener('scroll', () => {
+        let cur = '';
+        sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) cur = s.id; });
+        tocLinks.forEach(l => {
+            l.classList.remove('active');
+            if (l.getAttribute('href') === '#' + cur) l.classList.add('active');
+        });
+    });
+
+    // Fade in
+    const obs = new IntersectionObserver(e => e.forEach(en => {
+        if (en.isIntersecting) en.target.classList.add('fade-in-up');
+    }), { threshold: 0.06 });
+    document.querySelectorAll('.article-section, .layer-card, .concept-card, .activ-card, .ns-card').forEach(el => obs.observe(el));
+});
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+        btn.style.color = 'var(--green-primary)';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copier'; btn.style.color = ''; }, 2000);
+    });
+}
+</script>
+</body>
+</html>

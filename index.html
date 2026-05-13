@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAALI LHOUSSAINE — Cryptologie & Sécurité Informatique</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Matrix Canvas Background -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- Scan Line Overlay -->
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="#cv" class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="#articles" class="nav-link"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <!-- Theme Toggle -->
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
+
+<!-- Scroll Progress -->
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+
+<!-- ===================== HERO ===================== -->
+<section id="accueil" class="hero">
+    <div class="hero-content">
+        <div class="hero-text">
+            <div class="terminal-prompt">
+                <span class="prompt-user">root@security</span><span class="prompt-sep">:</span><span class="prompt-path">~/portfolio</span><span class="prompt-dollar">$</span>
+                <span class="prompt-cmd" id="typedCmd"></span><span class="prompt-blink">▋</span>
+            </div>
+            <h1 class="hero-name glitch" data-text="BAALI LHOUSSAINE">BAALI LHOUSSAINE</h1>
+            <div class="hero-title-wrapper">
+                <span class="hex-accent">0x</span>
+                <span class="hero-title" id="heroTitle">Étudiant Master — Cryptologie & Sécurité Informatique</span>
+            </div>
+            <p class="hero-description">
+                Développeur full-stack en transition vers la sécurité offensive et la cryptographie appliquée.
+                Je construis des systèmes sécurisés et explore les protocoles cryptographiques modernes.
+            </p>
+            <div class="hero-badges">
+                <span class="badge"><i class="fas fa-shield-alt"></i> Sécurité</span>
+                <span class="badge"><i class="fas fa-lock"></i> Cryptologie</span>
+                <span class="badge"><i class="fas fa-bug"></i> Full Stack</span>
+                <span class="badge"><i class="fas fa-graduation-cap"></i> Master</span>
+            </div>
+            <div class="hero-buttons">
+                <a href="#projets" class="btn btn-primary"><i class="fas fa-terminal"></i> Mes Projets</a>
+                <a href="#contact" class="btn btn-secondary"><i class="fas fa-paper-plane"></i> Me Contacter</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="photo-frame">
+                <div class="frame-corners">
+                    <span class="corner tl"></span>
+                    <span class="corner tr"></span>
+                    <span class="corner bl"></span>
+                    <span class="corner br"></span>
+                </div>
+                <div class="photo-carousel">
+                    <div class="carousel-container">
+                        <div class="carousel-slide active">
+                            <img src="images/im2.jpeg" alt="Photo professionnelle 1">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="images/im1.png" alt="Photo professionnelle 2">
+                        </div>
+                    </div>
+                    <button class="carousel-controls carousel-prev" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+                    <button class="carousel-controls carousel-next" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+                    <div class="carousel-indicators">
+                        <div class="carousel-indicator active" data-slide="0"></div>
+                        <div class="carousel-indicator" data-slide="1"></div>
+                    </div>
+                </div>
+                <div class="scan-line-h"></div>
+                <div class="frame-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">SECURE_ID_VERIFIED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-scroll-hint">
+        <span>SCROLL</span>
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
+
+<!-- ===================== À PROPOS ===================== -->
+<section id="apropos" class="section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">// ABOUT</span>
+            <h2 class="section-title">À propos de moi</h2>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="about-grid">
+            <div class="about-text-block">
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <span class="t-dot red"></span>
+                        <span class="t-dot yellow"></span>
+                        <span class="t-dot green"></span>
+                        <span class="t-title">profile.sh</span>
+                    </div>
+                    <div class="terminal-body">
+                        <p><span class="t-cmd">$ cat profil.txt</span></p>
+                        <p class="t-out">Développeur web avec une licence en génie informatique, désormais spécialisé en <span class="t-green">Cryptologie et Sécurité Informatique</span> en Master. Je m'intéresse aux protocoles cryptographiques, à la sécurité des réseaux et aux vulnérabilités applicatives.</p>
+                        <br>
+                        <p><span class="t-cmd">$ cat parcours.txt</span></p>
+                        <p class="t-out">Après un parcours en développement full-stack incluant des projets en <span class="t-cyan">C#/.NET</span>, <span class="t-cyan">PHP/Moodle</span>, et <span class="t-cyan">Java</span>, j'ai intégré un Master axé sur la sécurité pour maîtriser la cryptographie appliquée, la sécurité offensive et défensive.</p>
+                        <br>
+                        <p><span class="t-cmd">$ cat objectifs.txt</span></p>
+                        <p class="t-out">Contribuer à des projets de <span class="t-green">sécurité système</span>, d'audit ou de développement sécurisé. Allier rigueur mathématique et compétences techniques.</p>
+                        <p class="t-prompt">█</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="skills-block">
+                <div class="skills-section-label">// COMPÉTENCES TECHNIQUES</div>
+
+                <div class="skill-group">
+                    <div class="sg-label"><i class="fas fa-code"></i> Langages</div>
+                    <div class="skills-row">
+                        <div class="skill-chip" title="C#"><img src="images/Csharp.png" alt="C#"><span>C#</span></div>
+                        <div class="skill-chip" title="Java"><i class="fab fa-java"></i><span>Java</span></div>
+                        <div class="skill-chip" title="PHP"><i class="fab fa-php"></i><span>PHP</span></div>
+                        <div class="skill-chip" title="JavaScript"><i class="fab fa-js"></i><span>JS</span></div>
+                        <div class="skill-chip" title="C"><i class="fas fa-c"></i><span>C</span></div>
+                        <div class="skill-chip" title="R"><i class="fas fa-chart-bar"></i><span>R</span></div>
+                    </div>
+                </div>
+
+                <div class="skill-group">
+                    <div class="sg-label"><i class="fas fa-globe"></i> Web & Frameworks</div>
+                    <div class="skills-row">
+                        <div class="skill-chip"><i class="fab fa-html5"></i><span>HTML5</span></div>
+                        <div class="skill-chip"><i class="fab fa-css3-alt"></i><span>CSS3</span></div>
+                        <div class="skill-chip"><img src="images/NET.png" alt=".NET"><span>.NET</span></div>
+                        <div class="skill-chip"><i class="fab fa-bootstrap"></i><span>Bootstrap</span></div>
+                        <div class="skill-chip"><img src="images/moodle.png" alt="Moodle"><span>Moodle</span></div>
+                        <div class="skill-chip"><img src="images/wamp.png" alt="Wamp"><span>WAMP</span></div>
+                    </div>
+                </div>
+
+                <div class="skill-group">
+                    <div class="sg-label"><i class="fas fa-database"></i> Bases de données</div>
+                    <div class="skills-row">
+                        <div class="skill-chip"><i class="fas fa-database"></i><span>MySQL</span></div>
+                        <div class="skill-chip"><i class="fas fa-server"></i><span>SQL Server</span></div>
+                        <div class="skill-chip"><i class="fas fa-table"></i><span>PL/SQL</span></div>
+                    </div>
+                </div>
+
+                <div class="skill-group">
+                    <div class="sg-label"><i class="fas fa-shield-alt"></i> Sécurité & Crypto</div>
+                    <div class="skills-row">
+                        <div class="skill-chip new"><i class="fas fa-lock"></i><span>Cryptographie</span></div>
+                        <div class="skill-chip new"><i class="fas fa-network-wired"></i><span>Sécurité Réseau</span></div>
+                        <div class="skill-chip new"><i class="fas fa-bug"></i><span>Audit</span></div>
+                        <div class="skill-chip new"><i class="fas fa-key"></i><span>PKI / TLS</span></div>
+                    </div>
+                </div>
+
+                <div class="skill-group">
+                    <div class="sg-label"><i class="fas fa-tools"></i> Outils & Méthodes</div>
+                    <div class="skills-row">
+                        <div class="skill-chip"><i class="fab fa-git-alt"></i><span>Git</span></div>
+                        <div class="skill-chip"><i class="fas fa-project-diagram"></i><span>UML</span></div>
+                        <div class="skill-chip"><i class="fas fa-sitemap"></i><span>Merise</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== PROJETS ===================== -->
+<section id="projets" class="section section-dark">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">// PROJECTS</span>
+            <h2 class="section-title">Projets</h2>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="projects-grid">
+
+            <!-- PFE - Featured -->
+            <div class="project-card featured-card">
+                <div class="card-glow"></div>
+                <div class="card-top-bar">
+                    <span class="card-tag">PFE — Projet de Fin d'Études</span>
+                    <span class="card-date">Avr–Juin 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-brain"></i></div>
+                <h3>Plugin Moodle — Génération de QCM par IA</h3>
+                <p class="card-desc">Plugin PHP complet pour Moodle permettant de générer automatiquement des QCM via l'IA. Interface enseignant (génération, export PDF/Excel, suivi) et interface étudiant (passage, résultats). Base de données indépendante avec intégration native Moodle.</p>
+                <div class="card-tech">
+                    <span class="tech">PHP</span>
+                    <span class="tech">JavaScript</span>
+                    <span class="tech">HTML/CSS</span>
+                    <span class="tech">SQL</span>
+                    <span class="tech">Moodle</span>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/BAALI-LHOUSSAINE" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Gestion Employés -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Application Web</span>
+                    <span class="card-date">Mars 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-users-cog"></i></div>
+                <h3>Gestion des Employés</h3>
+                <p class="card-desc">Système CRUD sécurisé avec base de données pour gérer les informations du personnel. Authentification et gestion des accès.</p>
+                <div class="card-tech">
+                    <span class="tech">C#</span>
+                    <span class="tech">.NET</span>
+                    <span class="tech">T-SQL</span>
+                    <span class="tech">SQL Server</span>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/BAALI-LHOUSSAINE/Gestion-des-employes" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Gestion Stock -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Application Desktop</span>
+                    <span class="card-date">Janv. 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-boxes"></i></div>
+                <h3>Gestion de Stock</h3>
+                <p class="card-desc">Application desktop de suivi des entrées/sorties de stock, gestion des demandes et génération de rapports sur les mouvements.</p>
+                <div class="card-tech">
+                    <span class="tech">C#</span>
+                    <span class="tech">.NET</span>
+                    <span class="tech">SQL Server</span>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/BAALI-LHOUSSAINE/GestionStock" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Réservation Restaurant -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Application Web</span>
+                    <span class="card-date">Nov. 2024</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-utensils"></i></div>
+                <h3>Réservation Restaurant</h3>
+                <p class="card-desc">Application web permettant aux clients de réserver des tables selon la date et le type de cuisine souhaité.</p>
+                <div class="card-tech">
+                    <span class="tech">PHP</span>
+                    <span class="tech">MySQL</span>
+                    <span class="tech">HTML/CSS</span>
+                    <span class="tech">JS</span>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/BAALI-LHOUSSAINE/reservation" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- BDD Relationnelle -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Base de Données</span>
+                    <span class="card-date">Oct. 2024</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-database"></i></div>
+                <h3>Base de Données Relationnelle</h3>
+                <p class="card-desc">Conception et implémentation d'une base de données relationnelle avec MySQL incluant modélisation UML/Merise et optimisation des requêtes SQL.</p>
+                <div class="card-tech">
+                    <span class="tech">MySQL</span>
+                    <span class="tech">UML</span>
+                    <span class="tech">Merise</span>
+                </div>
+                <div class="card-links">
+                    <a href="https://github.com/BAALI-LHOUSSAINE" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Simulateur d'attaque WPS -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Sécurité Réseau</span>
+                    <span class="card-date">2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-wifi"></i></div>
+                <h3>Simulateur d'attaque WPS</h3>
+                <p class="card-desc">Application de simulation d'attaque sur le protocole WPS (Wi-Fi Protected Setup). Démonstration des vulnérabilités du mécanisme PIN WPS et des phases d'attaque dans un environnement contrôlé à des fins éducatives.</p>
+                <div class="card-tech">
+                    <span class="tech">Python</span>
+                    <span class="tech">Scapy</span>
+                    <span class="tech">Sécurité Réseau</span>
+                    <span class="tech">WPS</span>
+                </div>
+                <div class="card-links">
+                    <a href="wps.html" class="card-link"><i class="fas fa-file-alt"></i> Article</a>
+                    <a href="https://github.com/BAALI-LHOUSSAINE/WPS-SIMULATOR-CSI" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Cantor-Zassenhaus -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Cryptographie & Algèbre</span>
+                    <span class="card-date">Mai 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-square-root-alt"></i></div>
+                <h3>Algorithme de Cantor-Zassenhaus</h3>
+                <p class="card-desc">Implémentation de l'algorithme probabiliste de Cantor-Zassenhaus pour la factorisation de polynômes sur les corps finis F_q. Couvre les trois phases : Square-Free Factorization, Distinct Degree Factorization (DDF) et Equal Degree Factorization (EDF), avec applications cryptographiques (ECC, codes correcteurs, BCH/Reed-Solomon).</p>
+                <div class="card-tech">
+                    <span class="tech">Python</span>
+                    <span class="tech">Algèbre</span>
+                    <span class="tech">Corps finis</span>
+                    <span class="tech">Cryptographie</span>
+                </div>
+                <div class="card-links">
+                    <a href="zessenhaus.html" class="card-link"><i class="fas fa-file-alt"></i> Article</a>
+                    <a href="https://github.com/BAALI-LHOUSSAINE/ZASSENHAUS" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Analyse Réseau — Sockets & Scapy -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Sécurité Réseau</span>
+                    <span class="card-date">Mai 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                <h3>Analyse Réseau — Sockets & Scapy</h3>
+                <p class="card-desc">Implémentation bas-niveau des communications réseau via les sockets Python, capture et analyse de paquets TCP en temps réel avec Scapy. Visualisation du three-way handshake, dissection des flags TCP/IP et interprétation du trafic réseau dans un environnement contrôlé.</p>
+                <div class="card-tech">
+                    <span class="tech">Python</span>
+                    <span class="tech">Scapy</span>
+                    <span class="tech">TCP/IP</span>
+                    <span class="tech">Sockets</span>
+                    <span class="tech">Packet Sniffing</span>
+                </div>
+                <div class="card-links">
+                    <a href="scapy.html" class="card-link"><i class="fas fa-file-alt"></i> Article</a>
+                    <a href="https://github.com/BAALI-LHOUSSAINE/Analyse_Reseau" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+            <!-- Neural Networks — Lab Iris -->
+            <div class="project-card">
+                <div class="card-top-bar">
+                    <span class="card-tag">Deep Learning</span>
+                    <span class="card-date">Mai 2025</span>
+                </div>
+                <div class="card-icon"><i class="fas fa-brain"></i></div>
+                <h3>Neural Networks — Lab Iris avec Keras</h3>
+                <p class="card-desc">Implémentation et entraînement d'un réseau de neurones artificiel pour la classification des fleurs Iris en 3 espèces avec TensorFlow/Keras. Couvre les fondements théoriques (perceptron, rétropropagation, fonctions d'activation) et la démarche complète : données brutes → normalisation → modèle → matrice de confusion.</p>
+                <div class="card-tech">
+                    <span class="tech">Python</span>
+                    <span class="tech">TensorFlow</span>
+                    <span class="tech">Keras</span>
+                    <span class="tech">Deep Learning</span>
+                    <span class="tech">Data Science</span>
+                </div>
+                <div class="card-links">
+                    <a href="neural_networks.html" class="card-link"><i class="fas fa-file-alt"></i> Article</a>
+                    <a href="https://github.com/BAALI-LHOUSSAINE/irisLabDL" class="card-link" target="_blank"><i class="fab fa-github"></i> Code</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ===================== FORMATION ===================== -->
+<section id="cv" class="section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">// EDUCATION & CV</span>
+            <h2 class="section-title">Formation</h2>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="timeline">
+
+            <div class="timeline-item active-item">
+                <div class="tl-dot"><i class="fas fa-shield-alt"></i></div>
+                <div class="tl-line"></div>
+                <div class="tl-card">
+                    <div class="tl-year">2025 – En cours</div>
+                    <h3>Master — Cryptologie & Sécurité Informatique</h3>
+                    <div class="tl-school"><i class="fas fa-university"></i> FST Al Hoceima</div>
+                    <p>Formation spécialisée en cryptographie appliquée, sécurité des systèmes et des réseaux, protocoles de sécurité, et audit de sécurité.</p>
+                    <div class="tl-tags">
+                        <span>Cryptographie</span><span>Sécurité Réseau</span><span>PKI</span><span>Audit</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="tl-dot"><i class="fas fa-laptop-code"></i></div>
+                <div class="tl-line"></div>
+                <div class="tl-card">
+                    <div class="tl-year">2024 – 2025</div>
+                    <h3>Licence — Génie Informatique</h3>
+                    <div class="tl-school"><i class="fas fa-university"></i> FST Beni Mellal</div>
+                    <p>Développement web, bases de données, programmation orientée objet, systèmes embarqués et projets informatiques.</p>
+                    <div class="tl-tags">
+                        <span>Full Stack</span><span>OOP</span><span>BDD</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="tl-dot"><i class="fas fa-flask"></i></div>
+                <div class="tl-line"></div>
+                <div class="tl-card">
+                    <div class="tl-year">2021 – 2023</div>
+                    <h3>DEUST — MIPC</h3>
+                    <div class="tl-school"><i class="fas fa-university"></i> FST Beni Mellal</div>
+                    <p>Mathématiques, Informatique, Physique et Chimie.</p>
+                    <div class="tl-tags">
+                        <span>Mathématiques</span><span>Informatique</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="tl-dot"><i class="fas fa-school"></i></div>
+                <div class="tl-line last"></div>
+                <div class="tl-card">
+                    <div class="tl-year">2019 – 2021</div>
+                    <h3>Baccalauréat — Sciences Mathématiques A</h3>
+                    <div class="tl-school"><i class="fas fa-school"></i> Lycée Qualifiant Idriss Premier</div>
+                    <p></p>
+                    <div class="tl-tags">
+                        <span>Maths</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CV Download -->
+        <div class="cv-download-block">
+            <div class="cv-download-inner">
+                <div class="cv-icon-wrap"><i class="fas fa-file-pdf"></i></div>
+                <div>
+                    <h3>Curriculum Vitae</h3>
+                    <p>Téléchargez mon CV complet au format PDF</p>
+                </div>
+                <a href="CV.pdf" download class="btn btn-primary"><i class="fas fa-download"></i> Télécharger CV</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== ARTICLES ===================== -->
+<section id="articles" class="section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">// ARTICLES</span>
+            <h2 class="section-title">Articles Scientifiques</h2>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="articles-intro">
+            <div class="terminal-box">
+                <div class="terminal-header">
+                    <span class="t-dot red"></span>
+                    <span class="t-dot yellow"></span>
+                    <span class="t-dot green"></span>
+                    <span class="t-title">articles.sh</span>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="t-cmd">$ ls -la ./publications</span></p>
+                    <p class="t-out">Partage de recherches en cryptologie, sécurité informatique et développement.</p>
+                    <p class="t-prompt">█</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="articles-grid">
+
+            <!-- Article 1 — Cantor-Zassenhaus -->
+            <article class="article-card" onclick="window.location.href='zessenhaus.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-lock"></i> Cryptographie</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Algorithme de Cantor-Zassenhaus</h3>
+                <p class="article-excerpt">Méthode probabiliste pour factoriser des polynômes sur les corps finis F_q — fondamentale en cryptographie (ECC, codes correcteurs, protocoles).</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 2 — Attaque WPS -->
+            <article class="article-card" onclick="window.location.href='wps.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-wifi"></i> Sécurité Réseau</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> 2025</span>
+                </div>
+                <h3 class="article-title">Simulateur d'Attaque WPS — Brute-Force PIN</h3>
+                <p class="article-excerpt">Analyse des vulnérabilités du protocole Wi-Fi Protected Setup et implémentation d'un simulateur Python de brute-force PIN en environnement contrôlé.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+            <!-- Article 3 — DoS/DDoS -->
+            <article class="article-card" onclick="window.location.href='saturation.html'" style="cursor:pointer">
+                <div class="article-meta">
+                    <span class="article-tag"><i class="fas fa-bolt"></i> Sécurité Réseau</span>
+                    <span class="article-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+                </div>
+                <h3 class="article-title">Attaques par Saturation — DoS, DDoS & SYN Flood</h3>
+                <p class="article-excerpt">Mécanismes des attaques DoS/DDoS, variantes volumétriques et applicatives, détection et contre-mesures défensives illustrées avec Python et Scapy.</p>
+                <div class="article-footer">
+                    <span class="article-status published"><i class="fas fa-check-circle"></i> Publié</span>
+                    <span class="article-toggle-hint"><i class="fas fa-external-link-alt"></i> Lire l'article</span>
+                </div>
+            </article>
+
+        </div>
+
+        <div class="articles-note">
+            <i class="fas fa-rss"></i>
+            <a href="articles.html" style="color:inherit;text-decoration:none">Voir tous les articles (5 publiés) →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== CONTACT ===================== -->
+<section id="contact" class="section section-dark">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">// CONTACT</span>
+            <h2 class="section-title">Me Contacter</h2>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="contact-grid">
+            <div class="contact-info-block">
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <span class="t-dot red"></span>
+                        <span class="t-dot yellow"></span>
+                        <span class="t-dot green"></span>
+                        <span class="t-title">contact.sh</span>
+                    </div>
+                    <div class="terminal-body">
+                        <p><span class="t-cmd">$ whoami</span></p>
+                        <p class="t-out t-green">baali_lhoussaine</p>
+                        <br>
+                        <p><span class="t-cmd">$ cat contact.cfg</span></p>
+                        <div class="contact-entry">
+                            <span class="c-key">email</span><span class="c-sep"> → </span>
+                            <a href="mailto:baalilhoussaine1@gmail.com" class="c-val">baalilhoussaine1@gmail.com</a>
+                        </div>
+                        <div class="contact-entry">
+                            <span class="c-key">tel</span><span class="c-sep"> → </span>
+                            <span class="c-val">+212 6 07 92 62 54</span>
+                        </div>
+                        <div class="contact-entry">
+                            <span class="c-key">linkedin</span><span class="c-sep"> → </span>
+                            <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank" class="c-val">baali-lhoussaine</a>
+                        </div>
+                        <div class="contact-entry">
+                            <span class="c-key">github</span><span class="c-sep"> → </span>
+                            <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank" class="c-val">BAALI-LHOUSSAINE</a>
+                        </div>
+                        <div class="contact-entry">
+                            <span class="c-key">location</span><span class="c-sep"> → </span>
+                            <span class="c-val">Casablanca, Maroc</span>
+                        </div>
+                        <p class="t-prompt">█</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form-block">
+                <div class="email-cta-block">
+                    <div class="email-cta-label">// ENVOYER UN MESSAGE</div>
+                    <p class="email-cta-desc">Cliquez sur l'icône ci-dessous pour m'envoyer un e-mail directement depuis votre boîte mail.</p>
+                    <a href="mailto:baalilhoussaine1@gmail.com?subject=Contact depuis le portfolio" class="email-icon-btn" title="Envoyer un email">
+                        <div class="email-icon-ring"></div>
+                        <i class="fas fa-envelope"></i>
+                        <span class="email-icon-pulse"></span>
+                    </a>
+                    <div class="email-cta-address">baalilhoussaine1@gmail.com</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <span class="logo-bracket">[</span>
+                <span>BAALI LHOUSSAINE</span>
+                <span class="logo-bracket">]</span>
+            </div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay">
+    <div class="popup" id="popup">
+        <div class="popup-header">
+            <div class="popup-icon" id="popupIcon"></div>
+            <button class="popup-close" id="popupClose">×</button>
+        </div>
+        <div class="popup-content">
+            <h3 id="popupTitle"></h3>
+            <p id="popupMessage"></p>
+        </div>
+        <div class="popup-actions">
+            <button class="popup-btn popup-btn-primary" id="popupOk">OK</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

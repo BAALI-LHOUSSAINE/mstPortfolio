@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur d'Attaque WPS — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="article.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── WPS-specific styles ── */
+        .wps-pin-diagram {
+            background: var(--bg-terminal, #061209);
+            border: 1px solid var(--border-color, rgba(0,255,106,.2));
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        .wps-pin-diagram .pin-title {
+            font-family: var(--font-mono, 'Share Tech Mono', monospace);
+            color: var(--green-primary, #00ff6a);
+            font-size: .8rem;
+            letter-spacing: .1em;
+            margin-bottom: 1.2rem;
+        }
+        .pin-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: .4rem;
+            flex-wrap: wrap;
+        }
+        .pin-digit {
+            width: 44px; height: 54px;
+            border: 2px solid var(--green-primary, #00ff6a);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono, monospace);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            position: relative;
+        }
+        .pin-digit.block1 { border-color: #00e5ff; color: #00e5ff; background: rgba(0,229,255,.08); }
+        .pin-digit.block2 { border-color: #00ff6a; color: #00ff6a; background: rgba(0,255,106,.08); }
+        .pin-digit.checksum { border-color: #ffe066; color: #ffe066; background: rgba(255,224,102,.08); }
+        .pin-sep {
+            font-size: 1.6rem; color: var(--text-muted, #666);
+            margin: 0 .3rem;
+        }
+        .pin-labels {
+            display: flex;
+            justify-content: center;
+            gap: .4rem;
+            margin-top: .8rem;
+            flex-wrap: wrap;
+        }
+        .pin-label-item {
+            font-size: .72rem;
+            font-family: var(--font-mono, monospace);
+            padding: .2rem .7rem;
+            border-radius: 4px;
+        }
+        .pin-label-item.block1 { background: rgba(0,229,255,.12); color: #00e5ff; }
+        .pin-label-item.block2 { background: rgba(0,255,106,.12); color: #00ff6a; }
+        .pin-label-item.checksum { background: rgba(255,224,102,.12); color: #ffe066; }
+
+        /* BF math steps */
+        .bf-math {
+            background: var(--bg-terminal, #061209);
+            border-left: 3px solid var(--green-primary, #00ff6a);
+            border-radius: 0 8px 8px 0;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0;
+            font-family: var(--font-mono, monospace);
+        }
+        .bf-math .bm-line {
+            display: flex; align-items: center; gap: 1rem;
+            padding: .35rem 0;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            font-size: .88rem;
+        }
+        .bf-math .bm-line:last-child { border-bottom: none; }
+        .bm-key { color: var(--cyan-accent, #00e5ff); min-width: 240px; }
+        .bm-val { color: var(--green-primary, #00ff6a); font-weight: 700; }
+        .bm-note { color: var(--text-muted, #888); font-size: .8rem; }
+
+        /* Attack phases */
+        .attack-phases {
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            margin: 1.5rem 0;
+        }
+        .ap-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1rem 1.2rem;
+            background: var(--bg-card, #0a1a0f);
+            border: 1px solid var(--border-color, rgba(0,255,106,.15));
+            border-radius: 8px;
+            transition: border-color .2s;
+        }
+        .ap-item:hover { border-color: var(--green-primary, #00ff6a); }
+        .ap-num {
+            width: 36px; height: 36px; min-width: 36px;
+            border-radius: 50%;
+            background: rgba(0,255,106,.12);
+            border: 1px solid var(--green-primary, #00ff6a);
+            color: var(--green-primary, #00ff6a);
+            font-family: var(--font-mono, monospace);
+            font-size: .85rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .ap-content h4 { color: #e0e0e0; margin-bottom: .3rem; font-size: .95rem; }
+        .ap-content p { color: var(--text-muted, #888); font-size: .85rem; line-height: 1.6; margin: 0; }
+
+        /* M1/M2 exchange diagram */
+        .eap-diagram {
+            background: var(--bg-terminal, #061209);
+            border: 1px solid var(--border-color, rgba(0,255,106,.2));
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+        .eap-header {
+            background: var(--bg-card, #0a1a0f);
+            padding: .6rem 1rem;
+            border-bottom: 1px solid rgba(0,255,106,.15);
+            font-family: var(--font-mono, monospace);
+            font-size: .8rem;
+            color: var(--green-primary, #00ff6a);
+        }
+        .eap-body { padding: 1.5rem 1rem; }
+        .eap-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: .9rem;
+            font-family: var(--font-mono, monospace);
+            font-size: .82rem;
+            gap: .5rem;
+        }
+        .eap-entity {
+            text-align: center;
+            min-width: 90px;
+        }
+        .eap-entity .ee-icon {
+            font-size: 1.3rem;
+            margin-bottom: .3rem;
+        }
+        .eap-entity .ee-name { color: #e0e0e0; font-weight: 600; font-size: .8rem; }
+        .eap-entity .ee-sub { color: var(--text-muted, #888); font-size: .7rem; }
+        .eap-arrow-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .25rem;
+        }
+        .eap-msg {
+            background: rgba(0,229,255,.08);
+            border: 1px solid rgba(0,229,255,.3);
+            color: #00e5ff;
+            border-radius: 4px;
+            padding: .2rem .6rem;
+            font-size: .78rem;
+            white-space: nowrap;
+        }
+        .eap-msg.green { background: rgba(0,255,106,.08); border-color: rgba(0,255,106,.3); color: #00ff6a; }
+        .eap-msg.red   { background: rgba(255,107,107,.08); border-color: rgba(255,107,107,.3); color: #ff6b6b; }
+        .eap-msg.yellow { background: rgba(255,224,102,.08); border-color: rgba(255,224,102,.3); color: #ffe066; }
+        .eap-arrow { color: var(--text-muted, #888); font-size: .7rem; }
+
+        /* Comparison table override */
+        .compare-table table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .compare-table th, .compare-table td {
+            padding: .7rem 1rem;
+            border: 1px solid var(--border-color, rgba(0,255,106,.15));
+            font-size: .85rem;
+            text-align: left;
+        }
+        .compare-table th { background: var(--bg-card, #0a1a0f); color: var(--green-primary, #00ff6a); font-family: var(--font-mono, monospace); }
+        .compare-table td { color: var(--text-secondary, #ccc); }
+        .compare-table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+        .vuln-col { color: #ff6b6b !important; }
+        .safe-col { color: #00ff6a !important; }
+
+        /* Video player */
+        .video-container {
+            background: var(--bg-card, #0a1a0f);
+            border: 1px solid var(--green-primary, #00ff6a);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+        .video-header {
+            background: var(--bg-terminal, #061209);
+            padding: .55rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            border-bottom: 1px solid rgba(0,255,106,.2);
+            font-family: var(--font-mono, monospace);
+            font-size: .82rem;
+        }
+        .video-header .vh-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .video-header .vh-dot.red { background: #ff5f57; }
+        .video-header .vh-dot.yellow { background: #febc2e; }
+        .video-header .vh-dot.green { background: #28c840; }
+        .video-header .vh-title { color: var(--green-primary, #00ff6a); margin-left: .3rem; }
+        .video-header .vh-badge {
+            margin-left: auto;
+            background: rgba(0,255,106,.12);
+            border: 1px solid rgba(0,255,106,.3);
+            color: var(--green-primary, #00ff6a);
+            border-radius: 4px;
+            padding: .1rem .5rem;
+            font-size: .72rem;
+        }
+        .video-container video { width: 100%; display: block; background: #000; max-height: 500px; }
+
+        /* Counter animation box */
+        .bf-counter {
+            background: var(--bg-terminal, #061209);
+            border: 1px solid var(--border-color, rgba(0,255,106,.2));
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            font-family: var(--font-mono, monospace);
+        }
+        .bf-counter .bc-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: .3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            font-size: .84rem;
+        }
+        .bf-counter .bc-row:last-child { border-bottom: none; }
+        .bc-label { color: var(--text-muted, #888); }
+        .bc-value { color: var(--green-primary, #00ff6a); font-weight: 700; }
+        .bc-value.cyan { color: #00e5ff; }
+        .bc-value.yellow { color: #ffe066; }
+        .bc-value.red { color: #ff6b6b; }
+
+        /* Timeline attack steps */
+        .attack-timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 1.5rem 0;
+        }
+        .attack-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px; top: 0; bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--green-primary, #00ff6a), transparent);
+        }
+        .at-item {
+            position: relative;
+            margin-bottom: 1.4rem;
+        }
+        .at-item::before {
+            content: '';
+            position: absolute;
+            left: -28px; top: 8px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--green-primary, #00ff6a);
+            background: var(--bg-card, #0a1a0f);
+        }
+        .at-item .at-title {
+            color: var(--green-primary, #00ff6a);
+            font-family: var(--font-mono, monospace);
+            font-size: .85rem;
+            font-weight: 700;
+            margin-bottom: .4rem;
+        }
+        .at-item .at-desc { color: var(--text-secondary, #ccc); font-size: .88rem; line-height: 1.6; }
+
+        /* Scapy features bar reuse */
+        .wps-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: .8rem;
+            margin: 1.2rem 0;
+        }
+        .wf-item {
+            background: var(--bg-card, #0a1a0f);
+            border: 1px solid var(--border-color, rgba(0,255,106,.15));
+            border-radius: 8px;
+            padding: .9rem 1rem;
+            display: flex; align-items: center; gap: .7rem;
+            font-size: .85rem;
+            color: var(--text-secondary, #ccc);
+            transition: border-color .2s;
+        }
+        .wf-item:hover { border-color: var(--green-primary, #00ff6a); }
+        .wf-item i { color: var(--green-primary, #00ff6a); font-size: 1rem; min-width: 16px; }
+
+        /* Mitigation cards */
+        .mitigation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.2rem 0;
+        }
+        .mg-card {
+            background: var(--bg-card, #0a1a0f);
+            border: 1px solid var(--border-color, rgba(0,255,106,.15));
+            border-radius: 8px;
+            padding: 1.1rem;
+            transition: border-color .2s, transform .2s;
+        }
+        .mg-card:hover { border-color: var(--green-primary, #00ff6a); transform: translateY(-2px); }
+        .mg-card i { font-size: 1.3rem; color: var(--green-primary, #00ff6a); margin-bottom: .6rem; }
+        .mg-card h4 { color: #e0e0e0; font-size: .9rem; margin-bottom: .4rem; }
+        .mg-card p { color: var(--text-muted, #888); font-size: .82rem; line-height: 1.5; margin: 0; }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv" class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html" class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+
+<div class="reading-progress-wrap">
+    <div class="reading-progress-bar" id="readingProgress"></div>
+</div>
+
+<!-- ===================== ARTICLE HERO ===================== -->
+<header class="article-hero">
+    <div class="container">
+        <div class="article-breadcrumb">
+            <a href="articles.html"><i class="fas fa-arrow-left"></i> Articles</a>
+            <span class="bc-sep">/</span>
+            <span>Sécurité Réseau</span>
+        </div>
+
+        <div class="article-hero-meta">
+            <span class="acf-tag web"><i class="fas fa-wifi"></i> Sécurité Réseau</span>
+            <span class="acf-tag crypto"><i class="fas fa-key"></i> WPS</span>
+            <span class="acf-tag"><i class="fab fa-python"></i> Python</span>
+            <span class="article-hero-date"><i class="fas fa-calendar-alt"></i> 2025</span>
+            <span class="article-hero-read"><i class="fas fa-clock"></i> ~22 min de lecture</span>
+        </div>
+
+        <h1 class="article-hero-title glitch" data-text="Attaque WPS">
+            Attaque WPS
+        </h1>
+        <h2 class="article-hero-subtitle">Simulateur d'attaque par Brute-Force sur le protocole WPS</h2>
+
+        <p class="article-hero-desc">
+            Analyse approfondie des vulnérabilités du protocole Wi-Fi Protected Setup (WPS),
+            du fonctionnement mathématique du brute-force PIN, et implémentation d'un simulateur
+            complet en Python pour visualiser chaque phase de l'attaque dans un environnement contrôlé.
+        </p>
+
+        <div class="article-hero-topics">
+            <span class="acf-topic">WPS PIN</span>
+            <span class="acf-topic">Brute-Force</span>
+            <span class="acf-topic">Wi-Fi 802.11</span>
+            <span class="acf-topic">EAP Protocol</span>
+            <span class="acf-topic">Python / Scapy</span>
+            <span class="acf-topic">WPA2</span>
+            <span class="acf-topic">Pixie Dust</span>
+            <span class="acf-topic">Contre-mesures</span>
+        </div>
+
+        <div class="article-author-bar">
+            <div class="author-avatar">BL</div>
+            <div>
+                <p class="author-name">Baali Lhoussaine</p>
+                <p class="author-role">Master Cryptologie & Sécurité Informatique — FST Al Hoceima</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc-sticky" id="toc">
+    <div class="container">
+        <div class="toc-inner">
+            <span class="toc-label">// SOMMAIRE</span>
+            <nav class="toc-nav">
+                <a href="#intro"          class="toc-link active">Introduction</a>
+                <a href="#wifi-securite"  class="toc-link">Wi-Fi & Sécurité</a>
+                <a href="#wps-protocole"  class="toc-link">Protocole WPS</a>
+                <a href="#vulnerabilite"  class="toc-link">La Vulnérabilité</a>
+                <a href="#bruteforce"     class="toc-link">Brute-Force PIN</a>
+                <a href="#implementation" class="toc-link">Implémentation</a>
+                <a href="#demo-video"     class="toc-link">Démonstration</a>
+                <a href="#contremesures"  class="toc-link">Contre-mesures</a>
+                <a href="#conclusion"     class="toc-link">Conclusion</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ARTICLE BODY ===================== -->
+<main class="article-body">
+    <div class="container">
+        <div class="article-layout">
+
+            <!-- MAIN CONTENT -->
+            <article class="article-content">
+
+                <!-- INTRO -->
+                <section id="intro" class="article-section">
+                    <div class="section-label">// 01 — INTRODUCTION</div>
+                    <h2>Pourquoi s'intéresser à la sécurité Wi-Fi ?</h2>
+
+                    <p>
+                        Le Wi-Fi est omniprésent : maisons, entreprises, hôpitaux, universités. Derrière chaque
+                        connexion sans fil se cachent des protocoles de sécurité dont certains présentent des failles
+                        critiques. Parmi eux, le <strong>Wi-Fi Protected Setup (WPS)</strong>, conçu pour simplifier
+                        la vie des utilisateurs, s'est révélé être l'une des vulnérabilités les plus exploitées de
+                        la dernière décennie.
+                    </p>
+
+                    <p>
+                        Cet article explore en profondeur le fonctionnement du protocole WPS, sa faille fondamentale
+                        de conception, la mécanique du <strong>brute-force PIN</strong>, et l'implémentation d'un
+                        simulateur pédagogique en Python permettant de visualiser chaque étape de l'attaque.
+                    </p>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <div>
+                            <p class="info-box-title">Objectif pédagogique</p>
+                            <p>Comprendre comment fonctionne le protocole WPS au niveau des échanges réseau,
+                            pourquoi sa conception est fondamentalement vulnérable, et comment un attaquant
+                            peut réduire l'espace de recherche de 10⁸ à seulement 11 000 tentatives maximum.</p>
+                        </div>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <p class="warn-box-title">Avertissement éthique &amp; légal</p>
+                            <p>Toutes les techniques présentées dans cet article sont à des fins <strong>strictement
+                            éducatives</strong>. L'utilisation de ces méthodes sur des réseaux sans autorisation
+                            explicite constitue un délit informatique sanctionné par la loi (article 607-3 du Code
+                            Pénal marocain, CFAA aux USA, article 323-1 du Code Pénal français). Le simulateur
+                            est conçu pour fonctionner sur un point d'accès virtuel local uniquement.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- WIFI SECURITE -->
+                <section id="wifi-securite" class="article-section">
+                    <div class="section-label">// 02 — FONDEMENTS</div>
+                    <h2>Sécurité Wi-Fi : de WEP à WPA3</h2>
+
+                    <p>
+                        Avant d'aborder WPS, il est essentiel de comprendre l'évolution des protocoles de sécurité
+                        Wi-Fi. Chaque génération a émergé pour corriger les failles de la précédente.
+                    </p>
+
+                    <div class="compare-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Protocole</th>
+                                    <th>Année</th>
+                                    <th>Chiffrement</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>WEP</strong></td>
+                                    <td>1997</td>
+                                    <td>RC4 (clé 40/104 bits)</td>
+                                    <td class="vuln-col"><i class="fas fa-times-circle"></i> Cassé (minutes)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WPA</strong></td>
+                                    <td>2003</td>
+                                    <td>TKIP + RC4</td>
+                                    <td class="vuln-col"><i class="fas fa-times-circle"></i> Vulnérable</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WPA2</strong></td>
+                                    <td>2004</td>
+                                    <td>AES-CCMP</td>
+                                    <td style="color:#ffe066"><i class="fas fa-exclamation-circle"></i> Sécurisé (si bon mot de passe)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WPS</strong></td>
+                                    <td>2006</td>
+                                    <td>— (aide à connecter)</td>
+                                    <td class="vuln-col"><i class="fas fa-skull-crossbones"></i> Critique — sujet de cet article</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WPA3</strong></td>
+                                    <td>2018</td>
+                                    <td>SAE + AES-256</td>
+                                    <td class="safe-col"><i class="fas fa-check-circle"></i> Recommandé</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p>
+                        Notez que WPS n'est pas un protocole de chiffrement : c'est un <strong>mécanisme d'authentification
+                        simplifié</strong> qui permet à un appareil de rejoindre un réseau WPA2 sans saisir le mot de passe
+                        complet. C'est précisément dans cette simplification que réside la faille.
+                    </p>
+
+                    <h3>Rappel sur WPA2 — EAPOL 4-Way Handshake</h3>
+                    <p>
+                        En WPA2 classique, l'authentification utilise un <strong>4-Way Handshake</strong> basé sur le
+                        PMK (Pairwise Master Key), dérivé du mot de passe via PBKDF2-SHA1. Sans WPS, un attaquant doit
+                        capturer ce handshake et attaquer le PMK par dictionnaire ou brute-force — une opération qui
+                        peut prendre des années si le mot de passe est robuste. WPS offre un raccourci catastrophique.
+                    </p>
+                </section>
+
+                <!-- WPS PROTOCOLE -->
+                <section id="wps-protocole" class="article-section">
+                    <div class="section-label">// 03 — PROTOCOLE WPS</div>
+                    <h2>Wi-Fi Protected Setup : fonctionnement interne</h2>
+
+                    <p>
+                        WPS a été standardisé par la Wi-Fi Alliance en 2006 sous la référence <strong>IEEE 802.11i</strong>.
+                        Son objectif : permettre aux utilisateurs non-techniciens de connecter des appareils (imprimantes,
+                        smart TV, caméras IP) à un réseau Wi-Fi sécurisé sans manipuler manuellement le mot de passe WPA2.
+                    </p>
+
+                    <h3>Les trois méthodes WPS</h3>
+
+                    <div class="wps-features">
+                        <div class="wf-item">
+                            <i class="fas fa-keyboard"></i>
+                            <div>
+                                <strong>PIN Method</strong><br>
+                                <small style="color:var(--text-muted)">Code de 8 chiffres imprimé sur l'AP. <span style="color:#ff6b6b">⚠ Vulnérable</span></small>
+                            </div>
+                        </div>
+                        <div class="wf-item">
+                            <i class="fas fa-hand-pointer"></i>
+                            <div>
+                                <strong>PBC Method</strong><br>
+                                <small style="color:var(--text-muted)">Push Button Configuration. Bouton physique sur l'AP.</small>
+                            </div>
+                        </div>
+                        <div class="wf-item">
+                            <i class="fas fa-qrcode"></i>
+                            <div>
+                                <strong>NFC Method</strong><br>
+                                <small style="color:var(--text-muted)">Échange par champ proche. Rare en pratique.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Structure du PIN WPS — La faille de conception</h3>
+                    <p>
+                        Le PIN WPS est composé de <strong>8 chiffres</strong>. Mais sa structure interne révèle une
+                        vulnérabilité fondamentale de conception :
+                    </p>
+
+                    <div class="wps-pin-diagram">
+                        <div class="pin-title">// STRUCTURE DU PIN WPS (8 chiffres)</div>
+                        <div class="pin-visual">
+                            <div class="pin-digit block1">D</div>
+                            <div class="pin-digit block1">1</div>
+                            <div class="pin-digit block1">D</div>
+                            <div class="pin-digit block1">2</div>
+                            <div class="pin-sep">|</div>
+                            <div class="pin-digit block2">D</div>
+                            <div class="pin-digit block2">3</div>
+                            <div class="pin-digit block2">D</div>
+                            <div class="pin-sep">|</div>
+                            <div class="pin-digit checksum">CS</div>
+                        </div>
+                        <div class="pin-labels">
+                            <span class="pin-label-item block1">Bloc 1 — 4 chiffres (10 000 combinaisons)</span>
+                            <span class="pin-label-item block2">Bloc 2 — 3 chiffres (1 000 combinaisons)</span>
+                            <span class="pin-label-item checksum">Checksum (calculable)</span>
+                        </div>
+                    </div>
+
+                    <p>
+                        Le protocole WPS valide les deux blocs <strong>séparément et séquentiellement</strong> lors de
+                        l'échange EAP. Le point d'accès envoie un message <code>NACK</code> (Not Acknowledge) si le
+                        premier bloc est incorrect, <em>avant même</em> de vérifier le second bloc. De plus,
+                        le 8ème chiffre est un <strong>checksum</strong> calculable à partir des 7 autres.
+                    </p>
+
+                    <h3>L'échange EAP-WPS en détail</h3>
+                    <p>
+                        WPS utilise le protocole <strong>EAP (Extensible Authentication Protocol)</strong> pour
+                        l'échange des messages d'authentification. Voici la séquence complète M1–M8 :
+                    </p>
+
+                    <div class="eap-diagram">
+                        <div class="eap-header"><i class="fas fa-exchange-alt"></i> Échange EAP-WPS — Messages M1 à M8</div>
+                        <div class="eap-body">
+
+                            <div class="eap-row">
+                                <div class="eap-entity">
+                                    <div class="ee-icon" style="color:#00e5ff"><i class="fas fa-laptop"></i></div>
+                                    <div class="ee-name">Enrollee</div>
+                                    <div class="ee-sub">(l'attaquant)</div>
+                                </div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-msg">M1 → Enrollee Nonce (E-Nonce) + clé publique DH</div>
+                                    <div class="eap-arrow">────────────────────────────────→</div>
+                                </div>
+                                <div class="eap-entity">
+                                    <div class="ee-icon" style="color:#00ff6a"><i class="fas fa-wifi"></i></div>
+                                    <div class="ee-name">Registrar</div>
+                                    <div class="ee-sub">(Point d'accès)</div>
+                                </div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-arrow">←────────────────────────────────</div>
+                                    <div class="eap-msg">M2 → Registrar Nonce (R-Nonce) + clé publique DH</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-msg green">M3 → Hash du Bloc 1 du PIN (E-Hash1)</div>
+                                    <div class="eap-arrow">────────────────────────────────→</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-arrow">←────────────────────────────────</div>
+                                    <div class="eap-msg green">M4 → Hash du Bloc 1 du PIN (R-Hash1)</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-msg green">M5 → Révélation de E-S1 (secret Bloc 1)</div>
+                                    <div class="eap-arrow">────────────────────────────────→</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-arrow">←────────────────────────────────</div>
+                                    <div class="eap-msg red">M6 → NACK si Bloc 1 incorrect ❌</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-msg green">M7 → Hash + révélation Bloc 2 (si Bloc 1 OK)</div>
+                                    <div class="eap-arrow">────────────────────────────────→</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                            <div class="eap-row">
+                                <div class="eap-entity"></div>
+                                <div class="eap-arrow-wrap">
+                                    <div class="eap-arrow">←────────────────────────────────</div>
+                                    <div class="eap-msg yellow">M8 → Credentials WPA2 si tout correct ✓</div>
+                                </div>
+                                <div class="eap-entity"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <p class="info-box-title">La clé de la vulnérabilité</p>
+                            <p>Le message <strong>M6 (NACK sur Bloc 1)</strong> est la fuite d'information critique.
+                            Il permet à l'attaquant de savoir si les 4 premiers chiffres sont corrects <em>indépendamment</em>
+                            des 4 suivants. Sans cette information, il faudrait tester 10⁸ = 100 millions de combinaisons.
+                            Avec elle, seulement 10 000 + 1 000 = <strong>11 000 tentatives maximum</strong>.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VULNERABILITE -->
+                <section id="vulnerabilite" class="article-section">
+                    <div class="section-label">// 04 — LA FAILLE</div>
+                    <h2>Analyse de la vulnérabilité CVE-2011-5053</h2>
+
+                    <p>
+                        La vulnérabilité WPS a été découverte et publiée en décembre 2011 par <strong>Stefan Viehböck</strong>
+                        et indépendamment par Craig Heffner. Elle est répertoriée sous l'identifiant
+                        <strong>CVE-2011-5053</strong>. Elle affecte la quasi-totalité des routeurs commerciaux
+                        produits entre 2006 et 2012, et beaucoup d'appareils ultérieurs.
+                    </p>
+
+                    <h3>Pourquoi la validation séquentielle est fatale</h3>
+
+                    <div class="bf-math">
+                        <div class="bm-line">
+                            <span class="bm-key">PIN complet sans faille :</span>
+                            <span class="bm-val">10⁸ = 100 000 000</span>
+                            <span class="bm-note">combinaisons à tester</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Avec validation séquentielle :</span>
+                            <span class="bm-val">10⁴ + 10³ = 11 000</span>
+                            <span class="bm-note">combinaisons maximum</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">8ème chiffre = checksum :</span>
+                            <span class="bm-val">10⁴ + 10³ = 11 000</span>
+                            <span class="bm-note">le checksum réduit de 10⁴ à 10³ le bloc 2</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Réduction de l'espace :</span>
+                            <span class="bm-val">÷ 9 090</span>
+                            <span class="bm-note">100M → 11 000 tentatives</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Temps moyen (1 req/s) :</span>
+                            <span class="bm-val">~1,5 heure</span>
+                            <span class="bm-note">au lieu de 1 157 jours</span>
+                        </div>
+                    </div>
+
+                    <h3>Calcul du checksum WPS</h3>
+                    <p>
+                        Le 8ème chiffre du PIN est un <strong>checksum de Luhn modifié</strong>. Il est entièrement
+                        déterminé par les 7 premiers chiffres, donc il n'ajoute aucune entropie :
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — Calcul du checksum WPS</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">def</span> <span class="fn">wps_checksum</span>(pin_7digits: <span class="kw">int</span>) -> <span class="kw">int</span>:
+    <span class="str">"""
+    Calcule le 8ème chiffre (checksum) du PIN WPS à partir des 7 premiers.
+    Algorithme basé sur un checksum de Luhn modifié utilisé par la Wi-Fi Alliance.
+    
+    Args:
+        pin_7digits: Les 7 premiers chiffres du PIN (entier)
+    Returns:
+        Le chiffre de checksum (0-9)
+    """</span>
+    accum = <span class="num">0</span>
+    <span class="kw">while</span> pin_7digits:
+        accum += <span class="num">3</span> * (pin_7digits % <span class="num">10</span>)
+        pin_7digits = <span class="kw">int</span>(pin_7digits / <span class="num">10</span>)
+        accum += pin_7digits % <span class="num">10</span>
+        pin_7digits = <span class="kw">int</span>(pin_7digits / <span class="num">10</span>)
+    <span class="kw">return</span> (<span class="num">10</span> - accum % <span class="num">10</span>) % <span class="num">10</span>
+
+<span class="kw">def</span> <span class="fn">generate_pin</span>(bloc1: <span class="kw">int</span>, bloc2: <span class="kw">int</span>) -> <span class="kw">str</span>:
+    <span class="str">"""Assemble le PIN complet de 8 chiffres à partir des deux blocs."""</span>
+    <span class="comment"># Formatage avec zéros initiaux (ex: bloc1=42 → "0042")</span>
+    p1 = <span class="str">f"{bloc1:04d}"</span>   <span class="comment"># 4 chiffres avec zéros</span>
+    p2 = <span class="str">f"{bloc2:03d}"</span>   <span class="comment"># 3 chiffres avec zéros</span>
+    combined = <span class="kw">int</span>(p1 + p2)
+    cs = wps_checksum(combined)
+    <span class="kw">return</span> p1 + p2 + <span class="kw">str</span>(cs)
+
+<span class="comment"># Exemple</span>
+pin = generate_pin(<span class="num">1234</span>, <span class="num">567</span>)
+<span class="kw">print</span>(<span class="str">f"PIN complet : {pin}"</span>)  <span class="comment"># → "12345676"</span></code></pre>
+                    </div>
+
+                    <h3>La variante Pixie Dust (WPS Pixie)</h3>
+                    <p>
+                        En 2014, Dominique Bongard découvre une attaque encore plus dévastatrice : le <strong>Pixie Dust</strong>.
+                        Sur certains chipsets (Ralink, Broadcom, Atheros), les nonces aléatoires (E-Nonce, R-Nonce) utilisés
+                        dans l'échange M1-M8 sont générés avec un générateur pseudo-aléatoire de mauvaise qualité ou
+                        même constant. Cela permet de récupérer le PIN en quelques secondes, hors-ligne, sans aucune
+                        interaction avec le point d'accès après la première tentative.
+                    </p>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-bolt"></i></div>
+                        <div>
+                            <p class="warn-box-title">Pixie Dust vs Brute-Force classique</p>
+                            <p><strong>Brute-Force</strong> : 11 000 tentatives en réseau (~1h30). Nécessite que l'AP ne limite pas le débit.<br>
+                            <strong>Pixie Dust</strong> : récupère le PIN en quelques secondes, hors-ligne. Affecte ~20% des routeurs.
+                            Notre simulateur se concentre sur le brute-force classique pour en expliquer la mécanique.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BRUTE FORCE -->
+                <section id="bruteforce" class="article-section">
+                    <div class="section-label">// 05 — BRUTE-FORCE</div>
+                    <h2>Le Brute-Force PIN : mécanique complète</h2>
+
+                    <p>
+                        Le <strong>brute-force</strong> (ou attaque par force brute) est une méthode d'attaque consistant
+                        à essayer <em>systématiquement</em> toutes les combinaisons possibles d'un espace de valeurs
+                        jusqu'à trouver la bonne. C'est la méthode la plus simple conceptuellement, mais aussi la plus
+                        gourmande en ressources dans le cas général.
+                    </p>
+
+                    <h3>Comprendre le brute-force — concept général</h3>
+
+                    <p>
+                        Imaginons un cadenas à 4 chiffres (0000–9999). Pour le forcer sans indice, on essaie :
+                        0000, 0001, 0002, ..., 9999. En moyenne, on trouve la bonne combinaison après
+                        <strong>N/2 tentatives</strong> (où N est la taille de l'espace). En pire cas : N tentatives.
+                    </p>
+
+                    <div class="bf-counter">
+                        <div class="bc-row">
+                            <span class="bc-label">Cadenas 4 chiffres</span>
+                            <span class="bc-value">10 000 combinaisons max</span>
+                        </div>
+                        <div class="bc-row">
+                            <span class="bc-label">Mot de passe 8 chars alphanumériques</span>
+                            <span class="bc-value cyan">62⁸ ≈ 218 000 milliards</span>
+                        </div>
+                        <div class="bc-row">
+                            <span class="bc-label">PIN WPS naïf (8 chiffres)</span>
+                            <span class="bc-value yellow">10⁸ = 100 000 000</span>
+                        </div>
+                        <div class="bc-row">
+                            <span class="bc-label">PIN WPS avec faille de conception</span>
+                            <span class="bc-value red">11 000 maximum ← Notre cas</span>
+                        </div>
+                    </div>
+
+                    <h3>Algorithme de brute-force WPS</h3>
+
+                    <p>
+                        L'algorithme tire parti de la validation séquentielle en deux phases distinctes :
+                    </p>
+
+                    <div class="attack-timeline">
+                        <div class="at-item">
+                            <div class="at-title">Phase 1 — Brute-force du Bloc 1 (4 chiffres)</div>
+                            <div class="at-desc">
+                                On itère de 0000 à 9999. Pour chaque valeur, on construit le PIN complet avec un Bloc 2
+                                arbitraire (ex: 0000) et son checksum calculé. On envoie la requête WPS à l'AP.
+                                Si l'AP répond avec un <code>NACK</code> → Bloc 1 incorrect, on passe à la valeur suivante.
+                                Si l'AP ne renvoie pas NACK au Bloc 1 → <strong>Bloc 1 trouvé !</strong> Maximum : 10 000 tentatives.
+                            </div>
+                        </div>
+                        <div class="at-item">
+                            <div class="at-title">Phase 2 — Brute-force du Bloc 2 (3 chiffres)</div>
+                            <div class="at-desc">
+                                Avec le Bloc 1 confirmé, on itère le Bloc 2 de 000 à 999. Le checksum
+                                (8ème chiffre) est recalculé à chaque fois automatiquement. Si l'AP valide
+                                le PIN complet → <strong>Bloc 2 trouvé ! Le PIN est complet.</strong>
+                                Maximum : 1 000 tentatives supplémentaires.
+                            </div>
+                        </div>
+                        <div class="at-item">
+                            <div class="at-title">Phase 3 — Extraction des credentials WPA2</div>
+                            <div class="at-desc">
+                                Une fois le PIN validé, l'AP envoie le message M8 contenant les
+                                <strong>credentials chiffrés</strong> (SSID + mot de passe WPA2 complet) encapsulés
+                                dans un TLV (Type-Length-Value). Ces données sont déchiffrées avec la clé de session
+                                négociée via Diffie-Hellman pendant l'échange M1/M2.
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Complexité temporelle de l'attaque</h3>
+
+                    <div class="bf-math">
+                        <div class="bm-line">
+                            <span class="bm-key">Tentatives max Bloc 1 :</span>
+                            <span class="bm-val">10 000</span>
+                            <span class="bm-note">0000 à 9999</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Tentatives max Bloc 2 :</span>
+                            <span class="bm-val">1 000</span>
+                            <span class="bm-note">000 à 999 (checksum calculé automatiquement)</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Total maximum :</span>
+                            <span class="bm-val">11 000 tentatives</span>
+                            <span class="bm-note">scénario pire cas</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">À 1 tentative/seconde :</span>
+                            <span class="bm-val">~3 heures max</span>
+                            <span class="bm-note">~1h30 en moyenne</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">À 10 tentatives/seconde :</span>
+                            <span class="bm-val">~18 minutes max</span>
+                            <span class="bm-note">dépend du débit de l'AP</span>
+                        </div>
+                        <div class="bm-line">
+                            <span class="bm-key">Contre WPA2 classique :</span>
+                            <span class="bm-val">Années voire siècles</span>
+                            <span class="bm-note">sur un bon mot de passe (20+ chars aléatoires)</span>
+                        </div>
+                    </div>
+
+                    <h3>Pseudocode de l'algorithme complet</h3>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-code"></i> Pseudocode — Brute-force WPS</span>
+                        </div>
+                        <pre><code><span class="comment">// ─── PHASE 1 : Trouver le Bloc 1 ───────────────────────────</span>
+bloc1_trouve ← NULL
+
+<span class="kw">POUR</span> b1 <span class="kw">DE</span> 0000 <span class="kw">À</span> 9999 :
+    pin_test ← construire_pin(b1, bloc2=0000)   <span class="comment">// checksum auto-calculé</span>
+    reponse  ← envoyer_requete_wps(AP, pin_test)
+    
+    <span class="kw">SI</span> reponse == NACK_BLOC1 :
+        <span class="kw">CONTINUER</span>                               <span class="comment">// Bloc 1 incorrect</span>
+    <span class="kw">SINON SI</span> reponse == NACK_BLOC2 :
+        bloc1_trouve ← b1                       <span class="comment">// Bloc 1 CORRECT !</span>
+        <span class="kw">BREAK</span>
+
+<span class="kw">SI</span> bloc1_trouve == NULL :
+    <span class="kw">RETOURNER</span> "Échec — AP protégé contre le brute-force"
+
+<span class="comment">// ─── PHASE 2 : Trouver le Bloc 2 ───────────────────────────</span>
+<span class="kw">POUR</span> b2 <span class="kw">DE</span> 000 <span class="kw">À</span> 999 :
+    pin_test ← construire_pin(bloc1_trouve, b2) <span class="comment">// checksum auto-calculé</span>
+    reponse  ← envoyer_requete_wps(AP, pin_test)
+    
+    <span class="kw">SI</span> reponse == PIN_VALIDE :
+        credentials ← extraire_credentials(reponse)
+        <span class="kw">RETOURNER</span> credentials.mot_de_passe_wpa2
+
+<span class="kw">RETOURNER</span> "Erreur inattendue"</code></pre>
+                    </div>
+                </section>
+
+                <!-- IMPLEMENTATION -->
+                <section id="implementation" class="article-section">
+                    <div class="section-label">// 06 — IMPLÉMENTATION</div>
+                    <h2>Simulateur Python — Architecture et code</h2>
+
+                    <p>
+                        Le simulateur est structuré en plusieurs modules distincts pour clarifier les responsabilités.
+                        L'interface graphique (Tkinter) permet de visualiser en temps réel l'évolution du brute-force,
+                        le nombre de tentatives, la progression des deux blocs et le résultat final.
+                    </p>
+
+                    <div class="wps-features">
+                        <div class="wf-item"><i class="fas fa-desktop"></i> Interface Tkinter temps réel</div>
+                        <div class="wf-item"><i class="fas fa-wifi"></i> Simulation protocole WPS</div>
+                        <div class="wf-item"><i class="fas fa-calculator"></i> Checksum auto-calculé</div>
+                        <div class="wf-item"><i class="fas fa-tasks"></i> Affichage des deux phases</div>
+                        <div class="wf-item"><i class="fas fa-chart-line"></i> Compteur de tentatives live</div>
+                        <div class="wf-item"><i class="fas fa-terminal"></i> Log des échanges EAP</div>
+                    </div>
+
+                    <h3>Module 1 — Utilitaires WPS (wps_utils.py)</h3>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — wps_utils.py</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> hmac
+<span class="kw">import</span> hashlib
+<span class="kw">import</span> os
+
+<span class="comment"># ─── Checksum WPS ────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">wps_checksum</span>(pin: <span class="kw">int</span>) -> <span class="kw">int</span>:
+    <span class="str">"""
+    Calcule le chiffre de contrôle (8ème) du PIN WPS.
+    Basé sur l'algorithme de la Wi-Fi Alliance (WPS spec v2.0).
+    """</span>
+    accum = <span class="num">0</span>
+    <span class="kw">while</span> pin:
+        accum += <span class="num">3</span> * (pin % <span class="num">10</span>)
+        pin = <span class="kw">int</span>(pin / <span class="num">10</span>)
+        accum += pin % <span class="num">10</span>
+        pin = <span class="kw">int</span>(pin / <span class="num">10</span>)
+    <span class="kw">return</span> (<span class="num">10</span> - accum % <span class="num">10</span>) % <span class="num">10</span>
+
+<span class="kw">def</span> <span class="fn">build_pin</span>(bloc1: <span class="kw">int</span>, bloc2: <span class="kw">int</span>) -> <span class="kw">str</span>:
+    <span class="str">"""
+    Construit le PIN complet de 8 chiffres avec checksum.
+    
+    Args:
+        bloc1: Entier 0–9999 (premier bloc de 4 chiffres)
+        bloc2: Entier 0–999  (deuxième bloc de 3 chiffres)
+    Returns:
+        PIN string de 8 caractères (ex: "12345676")
+    """</span>
+    p1 = <span class="str">f"{bloc1:04d}"</span>
+    p2 = <span class="str">f"{bloc2:03d}"</span>
+    combined = <span class="kw">int</span>(p1 + p2)
+    cs = wps_checksum(combined)
+    <span class="kw">return</span> p1 + p2 + <span class="kw">str</span>(cs)
+
+<span class="kw">def</span> <span class="fn">validate_pin_format</span>(pin: <span class="kw">str</span>) -> <span class="kw">bool</span>:
+    <span class="str">"""Valide qu'un PIN est bien formé (8 chiffres, checksum correct)."""</span>
+    <span class="kw">if not</span> pin.isdigit() <span class="kw">or</span> <span class="kw">len</span>(pin) != <span class="num">8</span>:
+        <span class="kw">return</span> <span class="kw">False</span>
+    expected_cs = wps_checksum(<span class="kw">int</span>(pin[:<span class="num">7</span>]))
+    <span class="kw">return</span> <span class="kw">int</span>(pin[<span class="num">7</span>]) == expected_cs
+
+<span class="comment"># ─── Simulation du point d'accès virtuel ─────────────────────</span>
+<span class="kw">class</span> <span class="fn">VirtualAP</span>:
+    <span class="str">"""
+    Simule un point d'accès WPS vulnérable en mémoire.
+    Permet de tester le brute-force sans matériel réel.
+    """</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, ssid: <span class="kw">str</span>, wpa2_key: <span class="kw">str</span>, wps_pin: <span class="kw">str</span>):
+        self.ssid     = ssid
+        self.wpa2_key = wpa2_key
+        self.wps_pin  = wps_pin
+        self.attempts = <span class="num">0</span>
+        self.locked   = <span class="kw">False</span>
+        
+        <span class="comment"># Extraire les blocs du vrai PIN</span>
+        self.bloc1_true = wps_pin[:<span class="num">4</span>]
+        self.bloc2_true = wps_pin[<span class="num">4</span>:<span class="num">7</span>]
+    
+    <span class="kw">def</span> <span class="fn">try_pin</span>(self, pin: <span class="kw">str</span>) -> <span class="kw">dict</span>:
+        <span class="str">"""
+        Simule une tentative d'authentification WPS.
+        
+        Returns:
+            dict avec 'status': 'nack_bloc1' | 'nack_bloc2' | 'success'
+                      'credentials': dict si success
+        """</span>
+        <span class="kw">if</span> self.locked:
+            <span class="kw">return</span> {<span class="str">'status'</span>: <span class="str">'locked'</span>}
+        
+        self.attempts += <span class="num">1</span>
+        bloc1_test = pin[:<span class="num">4</span>]
+        bloc2_test = pin[<span class="num">4</span>:<span class="num">7</span>]
+        
+        <span class="comment"># Validation séquentielle — cœur de la vulnérabilité</span>
+        <span class="kw">if</span> bloc1_test != self.bloc1_true:
+            <span class="kw">return</span> {<span class="str">'status'</span>: <span class="str">'nack_bloc1'</span>, <span class="str">'attempts'</span>: self.attempts}
+        
+        <span class="kw">if</span> bloc2_test != self.bloc2_true:
+            <span class="kw">return</span> {<span class="str">'status'</span>: <span class="str">'nack_bloc2'</span>, <span class="str">'attempts'</span>: self.attempts}
+        
+        <span class="comment"># PIN complet correct → envoie les credentials</span>
+        <span class="kw">return</span> {
+            <span class="str">'status'</span>: <span class="str">'success'</span>,
+            <span class="str">'attempts'</span>: self.attempts,
+            <span class="str">'credentials'</span>: {
+                <span class="str">'ssid'</span>:     self.ssid,
+                <span class="str">'wpa2_key'</span>: self.wpa2_key,
+                <span class="str">'pin'</span>:      self.wps_pin
+            }
+        }</code></pre>
+                    </div>
+
+                    <h3>Module 2 — Moteur d'attaque (bruteforce_engine.py)</h3>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — bruteforce_engine.py</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> time
+<span class="kw">import</span> threading
+<span class="kw">from</span> wps_utils <span class="kw">import</span> VirtualAP, build_pin
+
+<span class="kw">class</span> <span class="fn">WPSBruteForce</span>:
+    <span class="str">"""
+    Moteur de brute-force WPS en deux phases.
+    Fonctionne dans un thread séparé pour ne pas bloquer l'UI.
+    """</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, ap: VirtualAP, callback, delay: <span class="kw">float</span> = <span class="num">0.05</span>):
+        <span class="str">"""
+        Args:
+            ap:       Instance VirtualAP cible
+            callback: Fonction appelée à chaque tentative (pour l'UI)
+            delay:    Délai entre tentatives en secondes (simule latence réseau)
+        """</span>
+        self.ap       = ap
+        self.callback = callback
+        self.delay    = delay
+        self.running  = <span class="kw">False</span>
+        self.bloc1_found = <span class="kw">None</span>
+        self._thread  = <span class="kw">None</span>
+    
+    <span class="kw">def</span> <span class="fn">start</span>(self):
+        <span class="str">"""Lance l'attaque dans un thread daemon."""</span>
+        self.running = <span class="kw">True</span>
+        self._thread = threading.Thread(target=self._attack, daemon=<span class="kw">True</span>)
+        self._thread.start()
+    
+    <span class="kw">def</span> <span class="fn">stop</span>(self):
+        <span class="str">"""Arrête proprement l'attaque."""</span>
+        self.running = <span class="kw">False</span>
+    
+    <span class="kw">def</span> <span class="fn">_attack</span>(self):
+        <span class="str">"""Algorithme principal de l'attaque en deux phases."""</span>
+        start_time = time.time()
+        
+        <span class="comment"># ──── PHASE 1 : Trouver le Bloc 1 ────</span>
+        self.callback(<span class="str">"PHASE"</span>, <span class="str">"1"</span>, <span class="str">"Recherche du Bloc 1 (0000–9999)..."</span>)
+        
+        <span class="kw">for</span> b1 <span class="kw">in</span> <span class="kw">range</span>(<span class="num">10000</span>):
+            <span class="kw">if not</span> self.running:
+                self.callback(<span class="str">"STOPPED"</span>, <span class="kw">None</span>, <span class="str">"Attaque interrompue."</span>)
+                <span class="kw">return</span>
+            
+            pin = build_pin(b1, <span class="num">0</span>)  <span class="comment"># Bloc 2 = 0000, checksum auto</span>
+            result = self.ap.try_pin(pin)
+            
+            self.callback(
+                <span class="str">"ATTEMPT"</span>,
+                {<span class="str">'phase'</span>: <span class="num">1</span>, <span class="str">'value'</span>: b1, <span class="str">'pin'</span>: pin, <span class="str">'status'</span>: result[<span class="str">'status'</span>]},
+                <span class="str">f"Phase 1 — Test Bloc1={b1:04d} | PIN={pin} | {result['status'].upper()}"</span>
+            )
+            
+            <span class="kw">if</span> result[<span class="str">'status'</span>] != <span class="str">'nack_bloc1'</span>:
+                <span class="comment"># Bloc 1 trouvé !</span>
+                self.bloc1_found = b1
+                self.callback(<span class="str">"BLOC1_FOUND"</span>, b1, <span class="str">f"✓ Bloc 1 trouvé : {b1:04d}"</span>)
+                <span class="kw">break</span>
+            
+            time.sleep(self.delay)
+        <span class="kw">else</span>:
+            self.callback(<span class="str">"FAILED"</span>, <span class="kw">None</span>, <span class="str">"Bloc 1 introuvable — AP protégé."</span>)
+            <span class="kw">return</span>
+        
+        <span class="comment"># ──── PHASE 2 : Trouver le Bloc 2 ────</span>
+        self.callback(<span class="str">"PHASE"</span>, <span class="str">"2"</span>, <span class="str">"Recherche du Bloc 2 (000–999)..."</span>)
+        
+        <span class="kw">for</span> b2 <span class="kw">in</span> <span class="kw">range</span>(<span class="num">1000</span>):
+            <span class="kw">if not</span> self.running:
+                self.callback(<span class="str">"STOPPED"</span>, <span class="kw">None</span>, <span class="str">"Attaque interrompue."</span>)
+                <span class="kw">return</span>
+            
+            pin = build_pin(self.bloc1_found, b2)
+            result = self.ap.try_pin(pin)
+            
+            self.callback(
+                <span class="str">"ATTEMPT"</span>,
+                {<span class="str">'phase'</span>: <span class="num">2</span>, <span class="str">'value'</span>: b2, <span class="str">'pin'</span>: pin, <span class="str">'status'</span>: result[<span class="str">'status'</span>]},
+                <span class="str">f"Phase 2 — Test Bloc2={b2:03d} | PIN={pin} | {result['status'].upper()}"</span>
+            )
+            
+            <span class="kw">if</span> result[<span class="str">'status'</span>] == <span class="str">'success'</span>:
+                elapsed = time.time() - start_time
+                self.callback(<span class="str">"SUCCESS"</span>, result[<span class="str">'credentials'</span>],
+                    <span class="str">f"✓✓ PIN trouvé : {result['credentials']['pin']} | "</span>
+                    <span class="str">f"WPA2 Key: {result['credentials']['wpa2_key']} | "</span>
+                    <span class="str">f"Temps: {elapsed:.1f}s | Tentatives: {result['attempts']}"</span>
+                )
+                <span class="kw">return</span>
+            
+            time.sleep(self.delay)
+        
+        self.callback(<span class="str">"FAILED"</span>, <span class="kw">None</span>, <span class="str">"Échec inattendu de la Phase 2."</span>)</code></pre>
+                    </div>
+
+                    <h3>Module 3 — Interface graphique (main_gui.py)</h3>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fab fa-python"></i> Python — main_gui.py</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="kw">import</span> tkinter <span class="kw">as</span> tk
+<span class="kw">from</span> tkinter <span class="kw">import</span> scrolledtext, ttk
+<span class="kw">from</span> wps_utils <span class="kw">import</span> VirtualAP
+<span class="kw">from</span> bruteforce_engine <span class="kw">import</span> WPSBruteForce
+
+<span class="kw">class</span> <span class="fn">WPSSimulatorGUI</span>:
+    <span class="str">"""Interface graphique du simulateur d'attaque WPS."""</span>
+    
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.root = tk.Tk()
+        self.root.title(<span class="str">"WPS Attack Simulator — Baali Lhoussaine"</span>)
+        self.root.geometry(<span class="str">"980x680"</span>)
+        self.root.configure(bg=<span class="str">'#0d1117'</span>)
+        
+        self.bf = <span class="kw">None</span>
+        self.attempt_count = <span class="num">0</span>
+        
+        self._build_ui()
+    
+    <span class="kw">def</span> <span class="fn">_build_ui</span>(self):
+        <span class="comment"># ─── Header ───────────────────────────────────────────────</span>
+        header = tk.Frame(self.root, bg=<span class="str">'#161b22'</span>, height=<span class="num">50</span>)
+        header.pack(fill=<span class="str">'x'</span>)
+        tk.Label(header, text=<span class="str">"WPS ATTACK SIMULATOR"</span>,
+                 font=(<span class="str">'Courier New'</span>, <span class="num">14</span>, <span class="str">'bold'</span>),
+                 fg=<span class="str">'#00ff6a'</span>, bg=<span class="str">'#161b22'</span>).pack(side=<span class="str">'left'</span>, padx=<span class="num">15</span>, pady=<span class="num">12</span>)
+        tk.Label(header, text=<span class="str">"[EDUCATIONAL PURPOSE ONLY]"</span>,
+                 font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+                 fg=<span class="str">'#ff6b6b'</span>, bg=<span class="str">'#161b22'</span>).pack(side=<span class="str">'right'</span>, padx=<span class="num">15</span>)
+        
+        <span class="comment"># ─── Config frame ─────────────────────────────────────────</span>
+        cfg = tk.LabelFrame(self.root, text=<span class="str">" Configuration AP cible "</span>,
+                            font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+                            fg=<span class="str">'#00e5ff'</span>, bg=<span class="str">'#0d1117'</span>,
+                            bd=<span class="num">1</span>, relief=<span class="str">'solid'</span>)
+        cfg.pack(fill=<span class="str">'x'</span>, padx=<span class="num">10</span>, pady=<span class="num">8</span>)
+        
+        fields = [
+            (<span class="str">"SSID :"</span>,      <span class="str">"ResearchLab_WiFi"</span>),
+            (<span class="str">"WPS PIN :"</span>,   <span class="str">"12345670"</span>),
+            (<span class="str">"WPA2 Key :"</span>,  <span class="str">"P@ssw0rd_Secret!"</span>),
+        ]
+        self.entries = {}
+        <span class="kw">for</span> row, (label, default) <span class="kw">in</span> <span class="kw">enumerate</span>(fields):
+            tk.Label(cfg, text=label, font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+                     fg=<span class="str">'#8b949e'</span>, bg=<span class="str">'#0d1117'</span>).grid(
+                         row=row, column=<span class="num">0</span>, sticky=<span class="str">'w'</span>, padx=<span class="num">10</span>, pady=<span class="num">3</span>)
+            e = tk.Entry(cfg, font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+                         bg=<span class="str">'#161b22'</span>, fg=<span class="str">'#c9d1d9'</span>,
+                         insertbackground=<span class="str">'#00ff6a'</span>, width=<span class="num">30</span>,
+                         bd=<span class="num">0</span>, relief=<span class="str">'flat'</span>)
+            e.insert(<span class="num">0</span>, default)
+            e.grid(row=row, column=<span class="num">1</span>, padx=<span class="num">5</span>, pady=<span class="num">3</span>, sticky=<span class="str">'w'</span>)
+            self.entries[label] = e
+        
+        <span class="comment"># ─── Progress bars ────────────────────────────────────────</span>
+        pb_frame = tk.Frame(self.root, bg=<span class="str">'#0d1117'</span>)
+        pb_frame.pack(fill=<span class="str">'x'</span>, padx=<span class="num">10</span>)
+        
+        tk.Label(pb_frame, text=<span class="str">"Bloc 1 (0–9999) :"</span>,
+                 font=(<span class="str">'Courier New'</span>, <span class="num">8</span>), fg=<span class="str">'#00e5ff'</span>, bg=<span class="str">'#0d1117'</span>
+                 ).grid(row=<span class="num">0</span>, column=<span class="num">0</span>, sticky=<span class="str">'w'</span>, padx=<span class="num">5</span>)
+        self.pb1 = ttk.Progressbar(pb_frame, length=<span class="num">600</span>, maximum=<span class="num">9999</span>)
+        self.pb1.grid(row=<span class="num">0</span>, column=<span class="num">1</span>, padx=<span class="num">5</span>, pady=<span class="num">2</span>)
+        self.lbl_pb1 = tk.Label(pb_frame, text=<span class="str">"0 / 10000"</span>,
+                                 font=(<span class="str">'Courier New'</span>, <span class="num">8</span>), fg=<span class="str">'#00e5ff'</span>, bg=<span class="str">'#0d1117'</span>)
+        self.lbl_pb1.grid(row=<span class="num">0</span>, column=<span class="num">2</span>)
+        
+        tk.Label(pb_frame, text=<span class="str">"Bloc 2  (0–999) :"</span>,
+                 font=(<span class="str">'Courier New'</span>, <span class="num">8</span>), fg=<span class="str">'#00ff6a'</span>, bg=<span class="str">'#0d1117'</span>
+                 ).grid(row=<span class="num">1</span>, column=<span class="num">0</span>, sticky=<span class="str">'w'</span>, padx=<span class="num">5</span>)
+        self.pb2 = ttk.Progressbar(pb_frame, length=<span class="num">600</span>, maximum=<span class="num">999</span>)
+        self.pb2.grid(row=<span class="num">1</span>, column=<span class="num">1</span>, padx=<span class="num">5</span>, pady=<span class="num">2</span>)
+        self.lbl_pb2 = tk.Label(pb_frame, text=<span class="str">"0 / 1000"</span>,
+                                 font=(<span class="str">'Courier New'</span>, <span class="num">8</span>), fg=<span class="str">'#00ff6a'</span>, bg=<span class="str">'#0d1117'</span>)
+        self.lbl_pb2.grid(row=<span class="num">1</span>, column=<span class="num">2</span>)
+        
+        <span class="comment"># ─── Log area ─────────────────────────────────────────────</span>
+        self.log = scrolledtext.ScrolledText(
+            self.root, height=<span class="num">18</span>,
+            font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+            bg=<span class="str">'#0d1117'</span>, fg=<span class="str">'#c9d1d9'</span>,
+            state=<span class="str">'disabled'</span>, bd=<span class="num">0</span>
+        )
+        self.log.pack(fill=<span class="str">'both'</span>, expand=<span class="kw">True</span>, padx=<span class="num">10</span>, pady=<span class="num">5</span>)
+        
+        <span class="comment"># Tags de couleur pour le log</span>
+        self.log.tag_config(<span class="str">'success'</span>, foreground=<span class="str">'#00ff6a'</span>)
+        self.log.tag_config(<span class="str">'found'</span>,   foreground=<span class="str">'#00e5ff'</span>)
+        self.log.tag_config(<span class="str">'phase'</span>,   foreground=<span class="str">'#ffe066'</span>)
+        self.log.tag_config(<span class="str">'error'</span>,   foreground=<span class="str">'#ff6b6b'</span>)
+        
+        <span class="comment"># ─── Buttons ──────────────────────────────────────────────</span>
+        btn_frame = tk.Frame(self.root, bg=<span class="str">'#0d1117'</span>)
+        btn_frame.pack(fill=<span class="str">'x'</span>, padx=<span class="num">10</span>, pady=<span class="num">5</span>)
+        
+        self.btn_start = tk.Button(
+            btn_frame, text=<span class="str">"▶ LANCER L'ATTAQUE"</span>,
+            font=(<span class="str">'Courier New'</span>, <span class="num">10</span>, <span class="str">'bold'</span>),
+            bg=<span class="str">'#238636'</span>, fg=<span class="str">'white'</span>, cursor=<span class="str">'hand2'</span>,
+            relief=<span class="str">'flat'</span>, padx=<span class="num">15</span>, pady=<span class="num">6</span>,
+            command=self.start_attack
+        )
+        self.btn_start.pack(side=<span class="str">'left'</span>, padx=<span class="num">5</span>)
+        
+        tk.Button(
+            btn_frame, text=<span class="str">"■ ARRÊTER"</span>,
+            font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+            bg=<span class="str">'#da3633'</span>, fg=<span class="str">'white'</span>, cursor=<span class="str">'hand2'</span>,
+            relief=<span class="str">'flat'</span>, padx=<span class="num">10</span>, pady=<span class="num">6</span>,
+            command=self.stop_attack
+        ).pack(side=<span class="str">'left'</span>, padx=<span class="num">5</span>)
+        
+        tk.Button(
+            btn_frame, text=<span class="str">"⌫ EFFACER LOG"</span>,
+            font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+            bg=<span class="str">'#30363d'</span>, fg=<span class="str">'#c9d1d9'</span>, cursor=<span class="str">'hand2'</span>,
+            relief=<span class="str">'flat'</span>, padx=<span class="num">10</span>, pady=<span class="num">6</span>,
+            command=self.clear_log
+        ).pack(side=<span class="str">'left'</span>, padx=<span class="num">5</span>)
+        
+        <span class="comment"># Compteur total</span>
+        self.lbl_total = tk.Label(btn_frame, text=<span class="str">"Tentatives : 0"</span>,
+                                   font=(<span class="str">'Courier New'</span>, <span class="num">9</span>),
+                                   fg=<span class="str">'#8b949e'</span>, bg=<span class="str">'#0d1117'</span>)
+        self.lbl_total.pack(side=<span class="str">'right'</span>, padx=<span class="num">15</span>)
+    
+    <span class="kw">def</span> <span class="fn">log_write</span>(self, msg: <span class="kw">str</span>, tag: <span class="kw">str</span> = <span class="kw">None</span>):
+        <span class="str">"""Écrit dans le log de manière thread-safe."""</span>
+        <span class="kw">def</span> _write():
+            self.log.config(state=<span class="str">'normal'</span>)
+            <span class="kw">if</span> tag:
+                self.log.insert(tk.END, msg + <span class="str">'\n'</span>, tag)
+            <span class="kw">else</span>:
+                self.log.insert(tk.END, msg + <span class="str">'\n'</span>)
+            self.log.see(tk.END)
+            self.log.config(state=<span class="str">'disabled'</span>)
+        self.root.after(<span class="num">0</span>, _write)
+    
+    <span class="kw">def</span> <span class="fn">on_callback</span>(self, event_type: <span class="kw">str</span>, data, message: <span class="kw">str</span>):
+        <span class="str">"""Reçoit les événements du moteur de brute-force."""</span>
+        <span class="kw">if</span> event_type == <span class="str">"ATTEMPT"</span>:
+            self.attempt_count += <span class="num">1</span>
+            self.root.after(<span class="num">0</span>, <span class="kw">lambda</span>:
+                self.lbl_total.config(text=<span class="str">f"Tentatives : {self.attempt_count}"</span>))
+            <span class="kw">if</span> data[<span class="str">'phase'</span>] == <span class="num">1</span>:
+                self.root.after(<span class="num">0</span>, <span class="kw">lambda</span> v=data[<span class="str">'value'</span>]: (
+                    self.pb1.config(value=v),
+                    self.lbl_pb1.config(text=<span class="str">f"{v} / 10000"</span>)
+                ))
+            <span class="kw">else</span>:
+                self.root.after(<span class="num">0</span>, <span class="kw">lambda</span> v=data[<span class="str">'value'</span>]: (
+                    self.pb2.config(value=v),
+                    self.lbl_pb2.config(text=<span class="str">f"{v} / 1000"</span>)
+                ))
+            <span class="kw">if</span> self.attempt_count % <span class="num">50</span> == <span class="num">0</span>:  <span class="comment"># Log 1 sur 50</span>
+                self.log_write(message)
+        <span class="kw">elif</span> event_type == <span class="str">"PHASE"</span>:
+            self.log_write(<span class="str">f"\n{'='*60}\n[PHASE {data}] {message}\n{'='*60}"</span>, <span class="str">'phase'</span>)
+        <span class="kw">elif</span> event_type == <span class="str">"BLOC1_FOUND"</span>:
+            self.log_write(message, <span class="str">'found'</span>)
+        <span class="kw">elif</span> event_type == <span class="str">"SUCCESS"</span>:
+            self.log_write(<span class="str">"\n" + "★"*60, <span class="str">'success'</span>)
+            self.log_write(message, <span class="str">'success'</span>)
+            self.log_write(<span class="str">"★"*60, <span class="str">'success'</span>)
+        <span class="kw">elif</span> event_type <span class="kw">in</span> (<span class="str">"FAILED"</span>, <span class="str">"STOPPED"</span>):
+            self.log_write(message, <span class="str">'error'</span>)
+    
+    <span class="kw">def</span> <span class="fn">start_attack</span>(self):
+        ssid    = self.entries[<span class="str">"SSID :"</span>].get()
+        wps_pin = self.entries[<span class="str">"WPS PIN :"</span>].get()
+        wpa2    = self.entries[<span class="str">"WPA2 Key :"</span>].get()
+        
+        self.attempt_count = <span class="num">0</span>
+        self.pb1.config(value=<span class="num">0</span>); self.pb2.config(value=<span class="num">0</span>)
+        
+        ap = VirtualAP(ssid, wpa2, wps_pin)
+        self.bf = WPSBruteForce(ap, self.on_callback, delay=<span class="num">0.005</span>)
+        self.bf.start()
+        self.log_write(<span class="str">f"[*] Attaque lancée sur SSID='{ssid}' | PIN cible='{wps_pin}'"</span>, <span class="str">'phase'</span>)
+    
+    <span class="kw">def</span> <span class="fn">stop_attack</span>(self):
+        <span class="kw">if</span> self.bf: self.bf.stop()
+    
+    <span class="kw">def</span> <span class="fn">clear_log</span>(self):
+        self.log.config(state=<span class="str">'normal'</span>)
+        self.log.delete(<span class="str">'1.0'</span>, tk.END)
+        self.log.config(state=<span class="str">'disabled'</span>)
+    
+    <span class="kw">def</span> <span class="fn">run</span>(self):
+        self.root.mainloop()
+
+<span class="kw">if</span> __name__ == <span class="str">'__main__'</span>:
+    app = WPSSimulatorGUI()
+    app.run()</code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-microchip"></i></div>
+                        <div>
+                            <p class="info-box-title">Architecture des 3 threads</p>
+                            <ul class="article-list">
+                                <li><strong>Thread Principal</strong> — Boucle Tkinter, gestion des événements UI, mise à jour des barres de progression</li>
+                                <li><strong>Thread BruteForce</strong> — Exécute l'algorithme d'attaque en Phase 1 puis Phase 2, sans bloquer l'interface</li>
+                                <li><code>root.after(0, lambda...)</code> — Pattern thread-safe pour mettre à jour Tkinter depuis un thread secondaire</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DEMO VIDEO -->
+                <section id="demo-video" class="article-section">
+                    <div class="section-label">// 07 — DÉMONSTRATION</div>
+                    <h2>Démonstration — Phase de simulation en vidéo</h2>
+
+                    <p>
+                        La vidéo ci-dessous montre l'exécution réelle du simulateur. On peut observer en temps réel
+                        la <strong>Phase 1</strong> (recherche du Bloc 1 — barre cyan), la <strong>Phase 2</strong>
+                        (recherche du Bloc 2 — barre verte), et l'affichage final des credentials WPA2 récupérés.
+                    </p>
+
+                    <div class="video-container">
+                        <div class="video-header">
+                            <div class="vh-dot red"></div>
+                            <div class="vh-dot yellow"></div>
+                            <div class="vh-dot green"></div>
+                            <span class="vh-title"><i class="fas fa-play-circle"></i> &nbsp;wps_attack_simulation.mp4 — Brute-force en action</span>
+                            <span class="vh-badge">DEMO LIVE</span>
+                        </div>
+                        <video controls preload="metadata">
+                            <source src="partie.mp4" type="video/mp4">
+                            <p style="color:#aaa;padding:1.5rem;text-align:center">
+                                Votre navigateur ne prend pas en charge la lecture vidéo.
+                                <a href="partie.mp4" style="color:#00ff6a">Télécharger la vidéo</a>.
+                            </p>
+                        </video>
+                    </div>
+
+                    <h3>Phases observables dans la vidéo</h3>
+
+                    <div class="attack-phases">
+                        <div class="ap-item">
+                            <div class="ap-num">1</div>
+                            <div class="ap-content">
+                                <h4>Initialisation &amp; Configuration de l'AP virtuel</h4>
+                                <p>Saisie du SSID cible, du PIN WPS à retrouver et de la clé WPA2. Le point d'accès virtuel
+                                est instancié en mémoire avec ces paramètres. L'attaque peut commencer.</p>
+                            </div>
+                        </div>
+                        <div class="ap-item">
+                            <div class="ap-num">2</div>
+                            <div class="ap-content">
+                                <h4>Phase 1 — Brute-force du Bloc 1 (barre bleue)</h4>
+                                <p>Le simulateur itère de 0000 à 9999, construisant à chaque itération un PIN complet
+                                avec checksum. La barre de progression bleue avance. Chaque NACK Bloc1 est loggé
+                                toutes les 50 tentatives pour ne pas saturer l'interface.</p>
+                            </div>
+                        </div>
+                        <div class="ap-item">
+                            <div class="ap-num">3</div>
+                            <div class="ap-content">
+                                <h4>Détection du Bloc 1 — Message NACK Bloc2</h4>
+                                <p>Quand l'AP répond avec un NACK Bloc2 au lieu de NACK Bloc1, cela signifie
+                                que le Bloc 1 est correct. Le simulateur log cet événement en bleu et passe
+                                immédiatement à la Phase 2.</p>
+                            </div>
+                        </div>
+                        <div class="ap-item">
+                            <div class="ap-num">4</div>
+                            <div class="ap-content">
+                                <h4>Phase 2 — Brute-force du Bloc 2 (barre verte)</h4>
+                                <p>Avec le Bloc 1 fixé, on itère de 000 à 999 sur le Bloc 2. Le checksum
+                                est recalculé automatiquement à chaque tentative. La barre verte progresse rapidement.</p>
+                            </div>
+                        </div>
+                        <div class="ap-item">
+                            <div class="ap-num">5</div>
+                            <div class="ap-content">
+                                <h4>Succès — Affichage des credentials WPA2</h4>
+                                <p>Lorsque le PIN complet est validé, le simulateur affiche le PIN trouvé,
+                                le mot de passe WPA2 récupéré, le nombre total de tentatives et le temps écoulé.
+                                La faille a été exploitée avec succès.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONTRE-MESURES -->
+                <section id="contremesures" class="article-section">
+                    <div class="section-label">// 08 — DÉFENSE</div>
+                    <h2>Contre-mesures et bonnes pratiques</h2>
+
+                    <p>
+                        Face à cette vulnérabilité critique, plusieurs contre-mesures ont été développées, tant
+                        côté constructeurs que côté administrateurs réseau.
+                    </p>
+
+                    <div class="mitigation-grid">
+                        <div class="mg-card">
+                            <i class="fas fa-power-off"></i>
+                            <h4>Désactiver WPS</h4>
+                            <p>La solution la plus radicale et efficace. Accéder à l'interface d'administration
+                            du routeur (192.168.1.1) et désactiver complètement la fonction WPS. Vérifier
+                            que la désactivation est persistante (certains firmwares ignorent ce paramètre).</p>
+                        </div>
+                        <div class="mg-card">
+                            <i class="fas fa-lock"></i>
+                            <h4>Rate Limiting</h4>
+                            <p>Certains firmwares implémentent un blocage temporaire après N tentatives échouées
+                            (ex: blocage 60s après 5 NACKs). Cela allonge l'attaque de heures à semaines/mois.
+                            Vérifier que votre routeur l'implémente.</p>
+                        </div>
+                        <div class="mg-card">
+                            <i class="fas fa-ban"></i>
+                            <h4>Lockout permanent</h4>
+                            <p>Les implémentations les plus strictes bloquent définitivement WPS après X tentatives
+                            échouées, nécessitant un reset physique du routeur pour le réactiver. Très efficace
+                            contre le brute-force automatisé.</p>
+                        </div>
+                        <div class="mg-card">
+                            <i class="fas fa-wifi"></i>
+                            <h4>Passer à WPA3</h4>
+                            <p>WPA3 avec SAE (Simultaneous Authentication of Equals) remplace WPS et est
+                            résistant aux attaques dictionnaires et brute-force hors-ligne. Solution pérenne
+                            si votre matériel le supporte.</p>
+                        </div>
+                        <div class="mg-card">
+                            <i class="fas fa-sync-alt"></i>
+                            <h4>Mises à jour firmware</h4>
+                            <p>Après la publication de la CVE-2011-5053, la Wi-Fi Alliance a mis à jour
+                            la spécification WPS v2.0 avec un mécanisme de lock-out obligatoire. Mettre à
+                            jour le firmware de son routeur pour bénéficier de ces correctifs.</p>
+                        </div>
+                        <div class="mg-card">
+                            <i class="fas fa-shield-virus"></i>
+                            <h4>Monitoring réseau</h4>
+                            <p>Déployer un IDS (Intrusion Detection System) pour détecter les tentatives
+                            d'authentification WPS répétées depuis une même adresse MAC. Des outils comme
+                            Snort ou Suricata peuvent détecter ces patterns.</p>
+                        </div>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-bug"></i></div>
+                        <div>
+                            <p class="warn-box-title">WPS "désactivé" ≠ WPS réellement désactivé</p>
+                            <p>Des études ont montré que sur certains modèles de routeurs (Linksys/Cisco, D-Link,
+                            Netgear), la désactivation de WPS via l'interface d'administration ne l'arrête pas
+                            réellement au niveau firmware. Le protocole reste actif et attaquable. Vérifier en
+                            lançant un <code>wash -i wlan0</code> (outil Linux) pour confirmer que votre AP
+                            n'annonce plus de support WPS dans ses beacons 802.11.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONCLUSION -->
+                <section id="conclusion" class="article-section">
+                    <div class="section-label">// 09 — CONCLUSION</div>
+                    <h2>Conclusion &amp; Perspectives</h2>
+
+                    <p>
+                        La vulnérabilité WPS est un exemple emblématique d'un problème récurrent en sécurité :
+                        une fonctionnalité conçue pour la <strong>commodité</strong> qui sacrifie fondamentalement
+                        la <strong>sécurité</strong>. La validation séquentielle des deux blocs du PIN, combinée
+                        à un checksum trivial, réduit un espace de 100 millions de possibilités à seulement
+                        11 000 tentatives — une erreur de conception, pas d'implémentation.
+                    </p>
+
+                    <p>
+                        Ce projet de simulation illustre comment un attaquant peut exploiter une faille protocolaire
+                        bien connue avec quelques dizaines de lignes de Python, sans matériel spécifique.
+                        Il démontre l'importance cruciale de l'<strong>analyse de sécurité dès la conception</strong>
+                        (Security by Design) plutôt que de tenter de corriger des failles fondamentales après coup.
+                    </p>
+
+                    <div class="takeaways">
+                        <h3>Points clés à retenir</h3>
+                        <ul class="article-list checklist">
+                            <li>WPS PIN est vulnérable par conception : sa validation séquentielle divise l'espace par ~9 090</li>
+                            <li>Le brute-force est une attaque exhaustive ; sa praticabilité dépend entièrement de la taille de l'espace de recherche</li>
+                            <li>La CVE-2011-5053 a affecté la quasi-totalité des routeurs commerciaux de 2006 à 2012+</li>
+                            <li>Désactiver WPS est la contre-mesure la plus simple et la plus fiable</li>
+                            <li>Le checksum du PIN WPS ne contribue pas à la sécurité — il n'ajoute aucune entropie</li>
+                            <li>WPA3 avec SAE est la solution moderne qui rend ces attaques obsolètes</li>
+                            <li>Toujours vérifier que la désactivation WPS est effective au niveau firmware</li>
+                        </ul>
+                    </div>
+
+                    <h3>Pour aller plus loin</h3>
+                    <div class="next-steps">
+                        <div class="ns-card">
+                            <i class="fas fa-bug"></i>
+                            <h4>Pixie Dust Attack</h4>
+                            <p>Explorer la variante hors-ligne qui exploite les générateurs pseudo-aléatoires
+                            défaillants de certains chipsets pour récupérer le PIN en quelques secondes.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-handshake"></i>
+                            <h4>WPA3 SAE</h4>
+                            <p>Analyser le protocole Dragonfly (SAE) de WPA3 et comprendre pourquoi il est
+                            résistant aux attaques hors-ligne contrairement à WPA2-PSK.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h4>802.11 Frame Analysis</h4>
+                            <p>Capturer et analyser avec Scapy les trames de management 802.11 (beacon, probe,
+                            association) pour comprendre comment les AP annoncent leurs capacités WPS.</p>
+                        </div>
+                    </div>
+
+                    <!-- SHARE / NAV -->
+                    <div class="article-nav-bottom">
+                        <a href="articles.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Retour aux articles
+                        </a>
+                        <div class="share-buttons">
+                            <span class="share-label">Partager :</span>
+                            <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank" class="share-btn linkedin">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                            <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank" class="share-btn github">
+                                <i class="fab fa-github"></i>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+            </article>
+
+            <!-- SIDEBAR -->
+            <aside class="article-sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// AUTEUR</div>
+                    <div class="sidebar-author">
+                        <div class="sa-avatar">BL</div>
+                        <div class="sa-name">Baali Lhoussaine</div>
+                        <div class="sa-role">Master Cryptologie & Sécurité Informatique</div>
+                        <div class="sa-links">
+                            <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                            <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                            <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// TECHNOLOGIES</div>
+                    <div class="sidebar-tech-list">
+                        <span class="tech">Python 3.x</span>
+                        <span class="tech">Tkinter</span>
+                        <span class="tech">Scapy</span>
+                        <span class="tech">WPS v2.0</span>
+                        <span class="tech">EAP</span>
+                        <span class="tech">802.11</span>
+                        <span class="tech">threading</span>
+                        <span class="tech">Linux</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// NIVEAU</div>
+                    <div class="level-bar-wrap">
+                        <div class="level-label">Prérequis Python</div>
+                        <div class="level-bar"><div class="level-fill" style="width:55%"></div></div>
+                        <div class="level-label">Prérequis Réseau</div>
+                        <div class="level-bar"><div class="level-fill" style="width:60%"></div></div>
+                        <div class="level-label">Difficulté globale</div>
+                        <div class="level-bar"><div class="level-fill" style="width:65%"></div></div>
+                    </div>
+                    <div class="level-badge">Intermédiaire+</div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// CVE & RÉFÉRENCES</div>
+                    <ul class="sidebar-sources">
+                        <li><a href="https://www.kb.cert.org/vuls/id/723755" target="_blank"><i class="fas fa-external-link-alt"></i> CVE-2011-5053 (CERT)</a></li>
+                        <li><a href="https://sviehb.wordpress.com/2011/12/27/wi-fi-protected-setup-pin-brute-force-vulnerability/" target="_blank"><i class="fas fa-external-link-alt"></i> Stefan Viehböck (2011)</a></li>
+                        <li><a href="https://www.wi-fi.org/security" target="_blank"><i class="fas fa-external-link-alt"></i> Wi-Fi Alliance Security</a></li>
+                        <li><a href="https://tools.ietf.org/html/rfc4764" target="_blank"><i class="fas fa-external-link-alt"></i> RFC 4764 — EAP-PSK</a></li>
+                        <li><a href="https://github.com/derv82/wifite" target="_blank"><i class="fab fa-github"></i> Wifite2 (référence)</a></li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-title">// VOIR AUSSI</div>
+                    <ul class="sidebar-sources">
+                        <li><a href="scapy.html"><i class="fas fa-file-alt"></i> Analyse Réseau avec Scapy</a></li>
+                        <li><a href="articles.html"><i class="fas fa-list"></i> Tous les articles</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+        </div><!-- /article-layout -->
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <span class="logo-bracket">[</span><span>BAALI LHOUSSAINE</span><span class="logo-bracket">]</span>
+            </div>
+            <p class="footer-tagline">Master Cryptologie & Sécurité Informatique</p>
+            <div class="footer-socials">
+                <a href="https://linkedin.com/in/baali-lhoussaine" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/BAALI-LHOUSSAINE" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="mailto:baalilhoussaine1@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="footer-copy">© 2025 Baali Lhoussaine — All rights reserved</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Matrix canvas
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const chars = '0123456789ABCDEF<>{}[]|+=/*%ΩΨΦΣΠαβγWPSPINWIFI';
+        const fs = 13; let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            ctx.fillStyle = isLight ? 'rgba(244,247,245,0.05)' : 'rgba(2,12,7,0.05)';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.font = fs+'px Share Tech Mono,monospace';
+            for (let i=0;i<drops.length;i++) {
+                ctx.fillStyle = isLight
+                    ? (Math.random()>0.97?'#0077aa':'#007a33')
+                    : (Math.random()>0.97?'#00e5ff':'#00ff6a');
+                ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);
+                if(drops[i]*fs>canvas.height&&Math.random()>0.975)drops[i]=0; drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize',()=>{cols=Math.floor(canvas.width/fs);drops=Array(cols).fill(1);});
+    })();
+
+    // Scroll progress
+    const sp = document.getElementById('scrollProgress');
+    const rp = document.getElementById('readingProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = (t/d*100)+'%';
+        if(sp) sp.style.width = pct;
+        if(rp) rp.style.width = pct;
+    });
+
+    // Mobile nav
+    const ham = document.querySelector('.hamburger');
+    const nav = document.querySelector('.nav-menu');
+    if(ham&&nav) ham.addEventListener('click',()=>{ham.classList.toggle('active');nav.classList.toggle('active');});
+
+    // Theme toggle
+    const tt = document.getElementById('themeToggle');
+    const ti = document.getElementById('themeIcon');
+    const saved = localStorage.getItem('theme')||'dark';
+    applyTheme(saved);
+    if(tt) tt.addEventListener('click',()=>{
+        const cur = document.documentElement.getAttribute('data-theme')||'dark';
+        const next = cur==='dark'?'light':'dark';
+        applyTheme(next); localStorage.setItem('theme',next);
+    });
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme',t);
+        if(ti) ti.className = t==='dark'?'fas fa-sun':'fas fa-moon';
+    }
+
+    // Active TOC on scroll
+    const sections = document.querySelectorAll('.article-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+    window.addEventListener('scroll', () => {
+        let cur = '';
+        sections.forEach(s => { if(window.scrollY >= s.offsetTop - 120) cur = s.id; });
+        tocLinks.forEach(l => {
+            l.classList.remove('active');
+            if(l.getAttribute('href')==='#'+cur) l.classList.add('active');
+        });
+    });
+
+    // Fade in on scroll
+    const obs = new IntersectionObserver(e=>e.forEach(en=>{
+        if(en.isIntersecting) en.target.classList.add('fade-in-up');
+    }),{threshold:0.06});
+    document.querySelectorAll('.article-section,.mg-card,.ns-card,.ap-item,.at-item').forEach(el=>obs.observe(el));
+});
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(()=>{
+        btn.innerHTML='<i class="fas fa-check"></i> Copié !';
+        btn.style.color='var(--green-primary)';
+        setTimeout(()=>{btn.innerHTML='<i class="fas fa-copy"></i> Copier';btn.style.color='';},2000);
+    });
+}
+</script>
+</body>
+</html>
