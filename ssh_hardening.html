@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sécurisation SSH : Hardening & Fail2ban — BAALI LHOUSSAINE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="article.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── SSH-specific additions ── */
+        .ssh-layer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .ssh-layer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1.1rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .ssh-layer-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+        }
+        .ssh-layer-card.c1::before { background: var(--cyan-accent); }
+        .ssh-layer-card.c2::before { background: var(--green-primary); }
+        .ssh-layer-card.c3::before { background: #ffa500; }
+        .ssh-layer-card.c4::before { background: #a78bfa; }
+        .ssh-layer-card.c5::before { background: #ef4444; }
+        .ssh-layer-card.c6::before { background: #10b981; }
+        .ssh-layer-card:hover { border-color: var(--border-active); transform: translateY(-2px); }
+        .slc-icon { font-size: 1.4rem; margin-bottom: 0.5rem; display: block; }
+        .c1 .slc-icon { color: var(--cyan-accent); }
+        .c2 .slc-icon { color: var(--green-primary); }
+        .c3 .slc-icon { color: #ffa500; }
+        .c4 .slc-icon { color: #a78bfa; }
+        .c5 .slc-icon { color: #ef4444; }
+        .c6 .slc-icon { color: #10b981; }
+        .ssh-layer-card h4 { font-family: var(--font-display); font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.4rem; letter-spacing: 1px; }
+        .ssh-layer-card p  { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+        /* ── Config table ── */
+        .cfg-table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-family: var(--font-mono); font-size: 0.8rem; }
+        .cfg-table th { background: var(--bg-card); color: var(--green-primary); padding: 0.6rem 1rem; text-align: left; border: 1px solid var(--border-color); letter-spacing: 1px; font-size: 0.72rem; }
+        .cfg-table td { padding: 0.55rem 1rem; border: 1px solid var(--border-color); color: var(--text-secondary); vertical-align: top; line-height: 1.6; }
+        .cfg-table tr:hover td { background: var(--bg-card); }
+        .cfg-table td.param { color: var(--cyan-accent); font-weight: 700; white-space: nowrap; }
+        .cfg-table td.val   { color: var(--green-primary); }
+        .cfg-table td.risk  { color: #ef4444; }
+        .cfg-table td.safe  { color: #10b981; }
+
+        /* ── Before / After compare ── */
+        .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+        .ba-box { background: var(--bg-terminal); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem 1.2rem; }
+        .ba-box.before { border-left: 3px solid #ef4444; }
+        .ba-box.after  { border-left: 3px solid var(--green-primary); }
+        .ba-title { font-family: var(--font-display); font-size: 0.68rem; letter-spacing: 2px; margin-bottom: 0.6rem; }
+        .before .ba-title { color: #ef4444; }
+        .after  .ba-title { color: var(--green-primary); }
+        .ba-box pre { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-secondary); line-height: 1.8; margin: 0; white-space: pre-wrap; }
+
+        /* ── Fail2ban flow ── */
+        .f2b-flow { display: flex; align-items: stretch; gap: 0; margin: 1.5rem 0; overflow-x: auto; }
+        .f2b-step { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem; min-width: 120px; text-align: center; flex: 1; position: relative; }
+        .f2b-step + .f2b-step { margin-left: -1px; border-left: 1px solid var(--border-active); }
+        .f2b-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--green-primary); font-size: 1.2rem; flex-shrink: 0; }
+        .f2b-step .fs-icon { font-size: 1.2rem; margin-bottom: 0.4rem; display: block; }
+        .f2b-step.fs1 .fs-icon { color: #ef4444; }
+        .f2b-step.fs2 .fs-icon { color: #ffa500; }
+        .f2b-step.fs3 .fs-icon { color: var(--cyan-accent); }
+        .f2b-step.fs4 .fs-icon { color: #a78bfa; }
+        .f2b-step.fs5 .fs-icon { color: var(--green-primary); }
+        .f2b-step h5 { font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 1px; color: var(--text-primary); margin-bottom: 0.3rem; }
+        .f2b-step p  { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
+
+        /* ── Brute-force simulation ── */
+        .bf-terminal {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 1rem 1.4rem;
+            margin: 1rem 0;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 2;
+            position: relative;
+        }
+        .bf-terminal::before {
+            content: '$ terminal';
+            position: absolute;
+            top: 8px; right: 12px;
+            font-size: 0.62rem;
+            color: #333;
+            letter-spacing: 2px;
+        }
+        .bf-terminal .t-prompt { color: #00ff6a; }
+        .bf-terminal .t-cmd    { color: #e0e0e0; }
+        .bf-terminal .t-fail   { color: #ef4444; }
+        .bf-terminal .t-warn   { color: #ffa500; }
+        .bf-terminal .t-ban    { color: #a78bfa; font-weight: 700; }
+        .bf-terminal .t-ok     { color: #10b981; font-weight: 700; }
+        .bf-terminal .t-muted  { color: #555; }
+
+        /* ── Port knocking diagram ── */
+        .pk-steps { display: flex; flex-direction: column; gap: 0.7rem; margin: 1.2rem 0; }
+        .pk-step  { display: grid; grid-template-columns: 36px 1fr; gap: 0.8rem; align-items: center; }
+        .pk-num   {
+            width: 36px; height: 36px;
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            font-family: var(--font-display);
+            font-weight: 900; font-size: 0.85rem;
+            color: var(--cyan-accent);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .pk-text { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+        .pk-text strong { color: var(--green-primary); }
+
+        /* ── 2FA visual ── */
+        .twofa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.2rem 0; }
+        .twofa-card { background: var(--bg-terminal); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem; }
+        .twofa-card h4 { font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 1px; color: var(--cyan-accent); margin-bottom: 0.5rem; }
+        .twofa-card p  { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+        @media (max-width: 768px) {
+            .ssh-layer-grid { grid-template-columns: 1fr 1fr; }
+            .ba-grid         { grid-template-columns: 1fr; }
+            .twofa-grid      { grid-template-columns: 1fr; }
+            .f2b-flow        { flex-direction: column; }
+            .f2b-arrow       { display: none; }
+        }
+        @media (max-width: 480px) {
+            .ssh-layer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <span class="logo-bracket">[</span>
+            <span class="logo-text">BL<span class="logo-cursor">_</span></span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html#accueil" class="nav-link"><span class="nav-num">01.</span>Accueil</a></li>
+            <li><a href="index.html#apropos" class="nav-link"><span class="nav-num">02.</span>À Propos</a></li>
+            <li><a href="index.html#projets" class="nav-link"><span class="nav-num">03.</span>Projets</a></li>
+            <li><a href="index.html#cv"      class="nav-link"><span class="nav-num">04.</span>CV</a></li>
+            <li><a href="articles.html"      class="nav-link active"><span class="nav-num">05.</span>Articles</a></li>
+            <li><a href="index.html#contact" class="nav-link"><span class="nav-num">06.</span>Contact</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="Basculer thème">
+            <i class="fas fa-sun" id="themeIcon"></i>
+        </button>
+        <div class="hamburger"><span></span><span></span><span></span></div>
+    </div>
+</nav>
+
+<div class="scroll-bar"><div class="scroll-progress" id="scrollProgress"></div></div>
+<div class="reading-progress-wrap"><div class="reading-progress-bar" id="readingProgress"></div></div>
+
+<!-- ===================== HERO ===================== -->
+<header class="article-hero">
+    <div class="container">
+        <div class="article-breadcrumb">
+            <a href="articles.html"><i class="fas fa-arrow-left"></i> Articles</a>
+            <span class="bc-sep">/</span>
+            <span>Sécurité Système</span>
+        </div>
+
+        <div class="article-hero-meta">
+            <span class="acf-tag web"><i class="fas fa-lock"></i> Sécurité Système</span>
+            <span class="acf-tag" style="color:#10b981;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25)">
+                <i class="fas fa-server"></i> SSH Hardening
+            </span>
+            <span class="acf-tag" style="color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25)">
+                <i class="fas fa-ban"></i> Fail2ban
+            </span>
+            <span class="article-hero-date"><i class="fas fa-calendar-alt"></i> Mai 2025</span>
+            <span class="article-hero-read"><i class="fas fa-clock"></i> ~22 min de lecture</span>
+        </div>
+
+        <h1 class="article-hero-title glitch" data-text="SSH HARDENING">Sécurisation d'une Infrastructure SSH</h1>
+        <h2 class="article-hero-subtitle">Hardening &amp; Fail2ban</h2>
+
+        <p class="article-hero-desc">
+            Auditer une configuration SSH par défaut, appliquer des mesures de durcissement
+            (désactivation root, clés RSA/ED25519, port knocking, 2FA), configurer Fail2ban
+            et simuler des attaques brute-force pour tester l'efficacité des contre-mesures.
+        </p>
+
+        <div class="article-hero-topics">
+            <span class="acf-topic">OpenSSH</span>
+            <span class="acf-topic">sshd_config</span>
+            <span class="acf-topic">RSA / ED25519</span>
+            <span class="acf-topic">Port Knocking</span>
+            <span class="acf-topic">2FA / TOTP</span>
+            <span class="acf-topic">Fail2ban</span>
+            <span class="acf-topic">Brute-force</span>
+            <span class="acf-topic">iptables</span>
+        </div>
+
+        <div class="article-author-bar">
+            <div class="author-avatar">BL</div>
+            <div>
+                <p class="author-name">Baali Lhoussaine</p>
+                <p class="author-role">Master Cryptologie &amp; Sécurité Informatique — FST Al Hoceima</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===================== TABLE OF CONTENTS ===================== -->
+<div class="toc-sticky" id="toc">
+    <div class="container">
+        <div class="toc-inner">
+            <span class="toc-label">// SOMMAIRE</span>
+            <nav class="toc-nav">
+                <a href="#intro"      class="toc-link active">Introduction</a>
+                <a href="#audit"      class="toc-link">Audit défaut</a>
+                <a href="#hardening"  class="toc-link">sshd_config</a>
+                <a href="#cles"       class="toc-link">Clés RSA/ED25519</a>
+                <a href="#knocking"   class="toc-link">Port Knocking</a>
+                <a href="#2fa"        class="toc-link">2FA / TOTP</a>
+                <a href="#fail2ban"   class="toc-link">Fail2ban</a>
+                <a href="#bruteforce" class="toc-link">Simulation BF</a>
+                <a href="#verification" class="toc-link">Vérification</a>
+                <a href="#conclusion" class="toc-link">Conclusion</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== ARTICLE BODY ===================== -->
+<main class="article-body">
+    <div class="container">
+        <div class="article-layout">
+
+            <!-- MAIN CONTENT -->
+            <article class="article-content">
+
+                <!-- INTRO -->
+                <section id="intro" class="article-section">
+                    <div class="section-label">// 01 — INTRODUCTION</div>
+                    <h2>SSH : protocole critique, cible prioritaire</h2>
+
+                    <p>
+                        SSH (<em>Secure Shell</em>) est le protocole d'administration à distance incontournable
+                        des systèmes Linux/Unix. Chiffré, authentifié, polyvalent — il permet l'accès shell,
+                        le transfert de fichiers (SCP/SFTP) et le tunneling. Mais sa <strong>configuration par
+                        défaut</strong> est loin d'être sécurisée et constitue une cible de choix pour les
+                        attaquants : scanners automatiques, bots de brute-force et exploits zero-day ciblent
+                        en permanence le port 22.
+                    </p>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <p class="info-box-title">Objectif du projet</p>
+                            <p>Auditer une configuration SSH par défaut, appliquer des mesures de durcissement
+                            (désactivation root, clés RSA/ED25519, port knocking, 2FA), configurer Fail2ban
+                            et simuler des attaques brute-force pour tester l'efficacité des contre-mesures.</p>
+                        </div>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <p class="warn-box-title">Environnement de test</p>
+                            <p>Toutes les manipulations sont réalisées dans un environnement virtualisé
+                            (VM Linux sous VirtualBox/VMware). Ne jamais tester ces techniques sur des
+                            systèmes de production sans autorisation explicite.</p>
+                        </div>
+                    </div>
+
+                    <h3>Les 6 axes de durcissement</h3>
+                    <div class="ssh-layer-grid">
+                        <div class="ssh-layer-card c1">
+                            <span class="slc-icon"><i class="fas fa-file-code"></i></span>
+                            <h4>sshd_config</h4>
+                            <p>Durcissement de la configuration principale du daemon SSH.</p>
+                        </div>
+                        <div class="ssh-layer-card c2">
+                            <span class="slc-icon"><i class="fas fa-key"></i></span>
+                            <h4>Clés RSA/ED25519</h4>
+                            <p>Remplacer les mots de passe par une authentification par clé cryptographique.</p>
+                        </div>
+                        <div class="ssh-layer-card c3">
+                            <span class="slc-icon"><i class="fas fa-door-closed"></i></span>
+                            <h4>Port Knocking</h4>
+                            <p>Masquer le port SSH derrière une séquence secrète de paquets.</p>
+                        </div>
+                        <div class="ssh-layer-card c4">
+                            <span class="slc-icon"><i class="fas fa-mobile-alt"></i></span>
+                            <h4>2FA / TOTP</h4>
+                            <p>Ajouter un second facteur d'authentification (Google Authenticator).</p>
+                        </div>
+                        <div class="ssh-layer-card c5">
+                            <span class="slc-icon"><i class="fas fa-ban"></i></span>
+                            <h4>Fail2ban</h4>
+                            <p>Bannir automatiquement les IP après N tentatives échouées.</p>
+                        </div>
+                        <div class="ssh-layer-card c6">
+                            <span class="slc-icon"><i class="fas fa-vial"></i></span>
+                            <h4>Test Brute-force</h4>
+                            <p>Simuler des attaques avec Hydra/Medusa pour valider les défenses.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AUDIT -->
+                <section id="audit" class="article-section">
+                    <div class="section-label">// 02 — AUDIT DE LA CONFIGURATION PAR DÉFAUT</div>
+                    <h2>Ce que SSH expose sans durcissement</h2>
+
+                    <p>
+                        Sur une installation fraîche Ubuntu/Debian, OpenSSH écoute sur le port 22 avec
+                        des paramètres qui favorisent la compatibilité au détriment de la sécurité.
+                        Voici les vulnérabilités les plus critiques d'une configuration par défaut.
+                    </p>
+
+                    <table class="cfg-table">
+                        <thead>
+                            <tr>
+                                <th>Paramètre par défaut</th>
+                                <th>Valeur</th>
+                                <th>Risque</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="param">PermitRootLogin</td>
+                                <td class="val">yes</td>
+                                <td class="risk">Connexion root directe possible → compromission totale si le mot de passe est faible</td>
+                            </tr>
+                            <tr>
+                                <td class="param">PasswordAuthentication</td>
+                                <td class="val">yes</td>
+                                <td class="risk">Brute-force de mot de passe possible indéfiniment si aucun rate-limiting</td>
+                            </tr>
+                            <tr>
+                                <td class="param">Port</td>
+                                <td class="val">22</td>
+                                <td class="risk">Scanné en permanence par des bots automatiques (Shodan, Masscan…)</td>
+                            </tr>
+                            <tr>
+                                <td class="param">MaxAuthTries</td>
+                                <td class="val">6</td>
+                                <td class="risk">6 tentatives par connexion — suffisant pour tester des dictionnaires</td>
+                            </tr>
+                            <tr>
+                                <td class="param">X11Forwarding</td>
+                                <td class="val">yes</td>
+                                <td class="risk">Surface d'attaque inutile si pas besoin d'interface graphique distante</td>
+                            </tr>
+                            <tr>
+                                <td class="param">Protocol</td>
+                                <td class="val">2 (parfois 1)</td>
+                                <td class="risk">SSHv1 (obsolète) contient des vulnérabilités cryptographiques critiques</td>
+                            </tr>
+                            <tr>
+                                <td class="param">LoginGraceTime</td>
+                                <td class="val">120s</td>
+                                <td class="risk">2 minutes pour s'authentifier — facilite les attaques lentes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Vérifier la config actuelle</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Version OpenSSH installée</span>
+ssh -V
+<span class="comment"># → OpenSSH_8.9p1 Ubuntu-3ubuntu0.6, OpenSSL 3.0.2</span>
+
+<span class="comment"># Lire la configuration active (inclure les fichiers supplémentaires)</span>
+sudo sshd -T | grep -E "permitrootlogin|passwordauthentication|port|maxauthtries|protocol"
+
+<span class="comment"># Vérifier que le service écoute bien</span>
+ss -tlnp | grep ssh
+<span class="comment"># → LISTEN 0  128  0.0.0.0:22  0.0.0.0:*  users:(("sshd",pid=...))</span>
+
+<span class="comment"># Scanner les ports ouverts depuis l'extérieur (simulé)</span>
+nmap -sV -p 22 127.0.0.1
+<span class="comment"># → 22/tcp open ssh  OpenSSH 8.9p1 Ubuntu ← exposé !</span></code></pre>
+                    </div>
+                </section>
+
+                <!-- HARDENING SSHD_CONFIG -->
+                <section id="hardening" class="article-section">
+                    <div class="section-label">// 03 — HARDENING : sshd_config</div>
+                    <h2>Durcissement de la configuration principale</h2>
+
+                    <p>
+                        Le fichier <code>/etc/ssh/sshd_config</code> est le point de contrôle central du daemon SSH.
+                        Chaque directive modifiée réduit la surface d'attaque. Voici l'avant/après.
+                    </p>
+
+                    <div class="ba-grid">
+                        <div class="ba-box before">
+                            <p class="ba-title">❌ AVANT — Configuration par défaut</p>
+                            <pre># /etc/ssh/sshd_config (défaut)
+Port 22
+Protocol 2
+PermitRootLogin yes
+MaxAuthTries 6
+PasswordAuthentication yes
+PermitEmptyPasswords no
+X11Forwarding yes
+LoginGraceTime 120
+UsePAM yes
+AllowTcpForwarding yes
+PrintMotd yes</pre>
+                        </div>
+                        <div class="ba-box after">
+                            <p class="ba-title">✅ APRÈS — Configuration durcie</p>
+                            <pre># /etc/ssh/sshd_config (durci)
+Port 2222
+Protocol 2
+PermitRootLogin no
+MaxAuthTries 3
+PasswordAuthentication no
+PermitEmptyPasswords no
+X11Forwarding no
+LoginGraceTime 30
+UsePAM yes
+AllowTcpForwarding no
+PrintMotd no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+MaxSessions 3
+ClientAliveInterval 300
+ClientAliveCountMax 2</pre>
+                        </div>
+                    </div>
+
+                    <table class="cfg-table">
+                        <thead>
+                            <tr>
+                                <th>Directive</th>
+                                <th>Valeur durcie</th>
+                                <th>Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="param">Port</td><td class="safe">2222</td><td>Évite les scanners automatiques qui ciblent le port 22</td></tr>
+                            <tr><td class="param">PermitRootLogin</td><td class="safe">no</td><td>Forcer une élévation de privilèges explicite via sudo</td></tr>
+                            <tr><td class="param">MaxAuthTries</td><td class="safe">3</td><td>Limiter drastiquement les tentatives par connexion</td></tr>
+                            <tr><td class="param">PasswordAuthentication</td><td class="safe">no</td><td>Clés uniquement — rend le brute-force mot de passe inutile</td></tr>
+                            <tr><td class="param">X11Forwarding</td><td class="safe">no</td><td>Désactiver si inutilisé (surface d'attaque)</td></tr>
+                            <tr><td class="param">LoginGraceTime</td><td class="safe">30</td><td>30 secondes max pour s'authentifier</td></tr>
+                            <tr><td class="param">AllowTcpForwarding</td><td class="safe">no</td><td>Empêche l'utilisation de SSH comme tunnel non autorisé</td></tr>
+                            <tr><td class="param">ClientAliveInterval</td><td class="safe">300</td><td>Couper les sessions inactives après 10 minutes</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Appliquer et valider</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Éditer la configuration</span>
+sudo nano /etc/ssh/sshd_config
+
+<span class="comment"># Tester la syntaxe AVANT de recharger (évite de se bloquer)</span>
+sudo sshd -t
+<span class="comment"># → Si aucune sortie : configuration valide</span>
+
+<span class="comment"># Recharger sans couper les sessions existantes</span>
+sudo systemctl reload sshd
+
+<span class="comment"># Vérifier que les changements sont actifs</span>
+sudo sshd -T | grep -E "port|permitrootlogin|passwordauthentication|maxauthtries"
+<span class="comment"># port 2222
+# permitrootlogin no
+# passwordauthentication no
+# maxauthtries 3</span></code></pre>
+                    </div>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>
+                            <p class="warn-box-title">⚠️ Ne jamais se bloquer !</p>
+                            <p>Toujours garder une <strong>session SSH ouverte</strong> pendant les modifications.
+                            Tester la nouvelle configuration dans un autre terminal avant de fermer la session courante.
+                            Sur VPS, avoir accès à la console d'urgence (KVM/IPMI) en cas de blocage.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CLÉS -->
+                <section id="cles" class="article-section">
+                    <div class="section-label">// 04 — AUTHENTIFICATION PAR CLÉS RSA/ED25519</div>
+                    <h2>Remplacer les mots de passe par la cryptographie</h2>
+
+                    <p>
+                        L'authentification par clé publique/privée est le mode le plus sécurisé pour SSH.
+                        On génère une paire de clés : la <strong>clé privée</strong> reste sur le client
+                        (protégée par une passphrase), la <strong>clé publique</strong> est déposée sur le serveur
+                        dans <code>~/.ssh/authorized_keys</code>.
+                    </p>
+
+                    <h3>RSA vs ED25519 — Quel algorithme choisir ?</h3>
+
+                    <table class="cfg-table">
+                        <thead>
+                            <tr><th>Critère</th><th>RSA 4096 bits</th><th>ED25519</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Taille de clé</td><td>4096 bits</td><td class="safe">256 bits</td></tr>
+                            <tr><td>Performance</td><td>Lente (grand exposant)</td><td class="safe">Très rapide</td></tr>
+                            <tr><td>Résistance quantique</td><td class="risk">Non</td><td class="risk">Non (à terme)</td></tr>
+                            <tr><td>Compatibilité</td><td class="safe">Universelle</td><td>OpenSSH ≥ 6.5 (2014)</td></tr>
+                            <tr><td>Taille signature</td><td>512 octets</td><td class="safe">64 octets</td></tr>
+                            <tr><td>Recommandation</td><td>Systèmes anciens</td><td class="safe">✅ Recommandé (2025)</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Générer une paire de clés ED25519</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># ── Sur le CLIENT ──────────────────────────────────────────────</span>
+
+<span class="comment"># Générer une clé ED25519 avec commentaire et passphrase</span>
+ssh-keygen -t ed25519 -C "baali@machine-client" -f ~/.ssh/id_ed25519
+<span class="comment"># Enter passphrase : [choisir une passphrase forte]
+# → Génère ~/.ssh/id_ed25519 (privée) et ~/.ssh/id_ed25519.pub (publique)</span>
+
+<span class="comment"># Ou RSA 4096 bits (pour compatibilité)</span>
+ssh-keygen -t rsa -b 4096 -C "baali@machine-client" -f ~/.ssh/id_rsa
+
+<span class="comment"># Afficher la clé publique à copier sur le serveur</span>
+cat ~/.ssh/id_ed25519.pub
+<span class="comment"># → ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... baali@machine-client</span>
+
+<span class="comment"># Copier la clé publique sur le serveur (méthode automatique)</span>
+ssh-copy-id -i ~/.ssh/id_ed25519.pub -p 2222 user@serveur
+
+<span class="comment"># ── Sur le SERVEUR ─────────────────────────────────────────────</span>
+
+<span class="comment"># Vérifier que la clé est bien enregistrée</span>
+cat ~/.ssh/authorized_keys
+<span class="comment"># → ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... baali@machine-client</span>
+
+<span class="comment"># Sécuriser les permissions (OBLIGATOIRE)</span>
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+<span class="comment"># ── Test de connexion ──────────────────────────────────────────</span>
+ssh -i ~/.ssh/id_ed25519 -p 2222 user@serveur
+<span class="comment"># → Enter passphrase for key '~/.ssh/id_ed25519': [saisir la passphrase]
+# → Welcome to Ubuntu 22.04 LTS</span>
+
+<span class="comment"># Utiliser ssh-agent pour ne pas resaisir la passphrase</span>
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519</code></pre>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-box-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <p class="info-box-title">Après avoir testé la connexion par clé</p>
+                            <p>Désactiver <code>PasswordAuthentication no</code> dans <code>sshd_config</code>
+                            et recharger le daemon. À partir de là, même avec le bon mot de passe,
+                            aucun accès n'est possible sans la clé privée.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PORT KNOCKING -->
+                <section id="knocking" class="article-section">
+                    <div class="section-label">// 05 — PORT KNOCKING</div>
+                    <h2>Masquer le port SSH derrière une séquence secrète</h2>
+
+                    <p>
+                        Le <strong>port knocking</strong> consiste à garder le port SSH fermé par défaut
+                        au niveau du firewall, et à ne l'ouvrir que temporairement après avoir reçu
+                        une séquence précise de connexions sur des ports spécifiques — la "séquence de frappe".
+                        Un attaquant qui scanne les ports ne verra aucun port ouvert.
+                    </p>
+
+                    <div class="pk-steps">
+                        <div class="pk-step">
+                            <div class="pk-num">1</div>
+                            <div class="pk-text">Le port 2222 (SSH) est <strong>fermé</strong> par iptables. Nmap ne voit rien.</div>
+                        </div>
+                        <div class="pk-step">
+                            <div class="pk-num">2</div>
+                            <div class="pk-text">Le client frappe (envoie un paquet TCP) sur le port <strong>7000</strong>, puis <strong>8000</strong>, puis <strong>9000</strong>.</div>
+                        </div>
+                        <div class="pk-step">
+                            <div class="pk-num">3</div>
+                            <div class="pk-text"><code>knockd</code> détecte la séquence correcte dans les logs du firewall.</div>
+                        </div>
+                        <div class="pk-step">
+                            <div class="pk-num">4</div>
+                            <div class="pk-text">Knockd exécute <code>iptables -A INPUT -s CLIENT_IP -p tcp --dport 2222 -j ACCEPT</code>.</div>
+                        </div>
+                        <div class="pk-step">
+                            <div class="pk-num">5</div>
+                            <div class="pk-text">Le client peut maintenant se connecter en SSH. Après déconnexion, le port se referme.</div>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Installer et configurer knockd</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># ── Installation ───────────────────────────────────────────────</span>
+sudo apt install knockd -y
+
+<span class="comment"># ── Configuration : /etc/knockd.conf ───────────────────────────</span>
+sudo nano /etc/knockd.conf</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-file-code"></i> /etc/knockd.conf</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code>[options]
+    UseSyslog
+    Interface = eth0    # Adapter selon votre interface réseau
+
+[openSSH]
+    sequence    = 7000,8000,9000    # Séquence secrète
+    seq_timeout = 10                # 10s pour frapper les 3 ports
+    tcpflags    = syn
+    command     = /sbin/iptables -A INPUT -s %IP% -p tcp --dport 2222 -j ACCEPT
+    cmd_timeout = 30                # Refermer après 30s si pas connecté
+
+[closeSSH]
+    sequence    = 9000,8000,7000    # Séquence inverse pour refermer
+    seq_timeout = 10
+    tcpflags    = syn
+    command     = /sbin/iptables -D INPUT -s %IP% -p tcp --dport 2222 -j ACCEPT</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Activer le port knocking</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Activer knockd au démarrage</span>
+sudo systemctl enable knockd
+sudo systemctl start knockd
+
+<span class="comment"># Fermer le port SSH dans iptables (état initial)</span>
+sudo iptables -A INPUT -p tcp --dport 2222 -j DROP
+
+<span class="comment"># ── Depuis le CLIENT ───────────────────────────────────────────</span>
+<span class="comment"># Installer le client knock</span>
+sudo apt install knockd -y
+
+<span class="comment"># Frapper la séquence</span>
+knock -v SERVEUR_IP 7000 8000 9000
+<span class="comment"># → hitting tcp SERVEUR_IP:7000
+# → hitting tcp SERVEUR_IP:8000
+# → hitting tcp SERVEUR_IP:9000</span>
+
+<span class="comment"># Maintenant se connecter</span>
+ssh -i ~/.ssh/id_ed25519 -p 2222 user@SERVEUR_IP
+
+<span class="comment"># Refermer après usage</span>
+knock -v SERVEUR_IP 9000 8000 7000</code></pre>
+                    </div>
+                </section>
+
+                <!-- 2FA -->
+                <section id="2fa" class="article-section">
+                    <div class="section-label">// 06 — AUTHENTIFICATION À DEUX FACTEURS (2FA)</div>
+                    <h2>TOTP avec Google Authenticator</h2>
+
+                    <p>
+                        Le 2FA (Two-Factor Authentication) ajoute un second facteur d'authentification
+                        en plus de la clé SSH : un code TOTP (<em>Time-based One-Time Password</em>) à
+                        6 chiffres qui change toutes les 30 secondes. Même avec la clé privée volée,
+                        un attaquant ne pourra pas se connecter sans le TOTP.
+                    </p>
+
+                    <div class="twofa-grid">
+                        <div class="twofa-card">
+                            <h4><i class="fas fa-key"></i> FACTEUR 1 — Clé SSH</h4>
+                            <p>Clé privée ED25519 + passphrase. Ce que vous <strong>possédez</strong> et <strong>savez</strong>.</p>
+                        </div>
+                        <div class="twofa-card">
+                            <h4><i class="fas fa-mobile-alt"></i> FACTEUR 2 — TOTP</h4>
+                            <p>Code à 6 chiffres généré par votre smartphone (Google Authenticator, Aegis). Ce que vous <strong>possédez</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Installer Google Authenticator PAM</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># ── Sur le SERVEUR ─────────────────────────────────────────────</span>
+sudo apt install libpam-google-authenticator -y
+
+<span class="comment"># Configurer 2FA pour l'utilisateur courant</span>
+google-authenticator
+<span class="comment"># → Do you want authentication tokens to be time-based? y
+# → Affiche un QR code → Scanner avec l'app smartphone
+# → Your new secret key is: JBSWY3DPEHPK3PXP
+# → Do you want me to update your ~/.google_authenticator file? y
+# → Do you want to disallow multiple uses of the same token? y
+# → Do you want to enable rate-limiting? y</span>
+
+<span class="comment"># ── Configurer PAM pour SSH ──────────────────────────────────────</span>
+sudo nano /etc/pam.d/sshd</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-file-code"></i> /etc/pam.d/sshd — Ajouter en tête</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Ajouter cette ligne EN HAUT du fichier</span>
+auth required pam_google_authenticator.so nullok
+
+<span class="comment"># nullok : permet la connexion sans 2FA si non configuré pour cet user
+# Retirer nullok en production pour forcer le 2FA</span></code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-file-code"></i> /etc/ssh/sshd_config — Activer le challenge-response</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Activer l'authentification multi-facteur dans sshd_config</span>
+ChallengeResponseAuthentication yes
+UsePAM yes
+AuthenticationMethods publickey,keyboard-interactive
+
+<span class="comment"># publickey,keyboard-interactive = clé ED25519 PUIS code TOTP</span>
+
+<span class="comment"># Recharger sshd</span>
+sudo systemctl reload sshd</code></pre>
+                    </div>
+
+                    <div class="bf-terminal">
+                        <span class="t-prompt">user@client</span><span class="t-muted">:~$</span> <span class="t-cmd">ssh -i ~/.ssh/id_ed25519 -p 2222 user@serveur</span><br>
+                        <span class="t-muted">Enter passphrase for key '/home/user/.ssh/id_ed25519':</span> <span class="t-ok">***********</span><br>
+                        <span class="t-muted">Verification code:</span> <span class="t-ok">847293</span><br>
+                        <span class="t-ok">Welcome to Ubuntu 22.04 LTS</span><br>
+                        <span class="t-muted">Last login: Sat May 20 21:09:39 2025</span>
+                    </div>
+                </section>
+
+                <!-- FAIL2BAN -->
+                <section id="fail2ban" class="article-section">
+                    <div class="section-label">// 07 — FAIL2BAN : DÉTECTION ET BANNISSEMENT AUTOMATIQUE</div>
+                    <h2>Bloquer les brute-forces en temps réel</h2>
+
+                    <p>
+                        Fail2ban est un IPS (<em>Intrusion Prevention System</em>) léger qui analyse les
+                        logs système, détecte les tentatives d'authentification répétées et bannit
+                        automatiquement les IP malveillantes via iptables/nftables.
+                    </p>
+
+                    <div class="f2b-flow">
+                        <div class="f2b-step fs1">
+                            <span class="fs-icon"><i class="fas fa-user-secret"></i></span>
+                            <h5>ATTAQUANT</h5>
+                            <p>Brute-force sur SSH</p>
+                        </div>
+                        <div class="f2b-arrow"><i class="fas fa-chevron-right"></i></div>
+                        <div class="f2b-step fs2">
+                            <span class="fs-icon"><i class="fas fa-file-alt"></i></span>
+                            <h5>AUTH.LOG</h5>
+                            <p>Échecs enregistrés dans les logs</p>
+                        </div>
+                        <div class="f2b-arrow"><i class="fas fa-chevron-right"></i></div>
+                        <div class="f2b-step fs3">
+                            <span class="fs-icon"><i class="fas fa-search"></i></span>
+                            <h5>FAIL2BAN</h5>
+                            <p>Analyse les logs via filtres regex</p>
+                        </div>
+                        <div class="f2b-arrow"><i class="fas fa-chevron-right"></i></div>
+                        <div class="f2b-step fs4">
+                            <span class="fs-icon"><i class="fas fa-balance-scale"></i></span>
+                            <h5>SEUIL</h5>
+                            <p>N échecs dans T secondes</p>
+                        </div>
+                        <div class="f2b-arrow"><i class="fas fa-chevron-right"></i></div>
+                        <div class="f2b-step fs5">
+                            <span class="fs-icon"><i class="fas fa-ban"></i></span>
+                            <h5>BAN</h5>
+                            <p>IP bannie via iptables DROP</p>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Installation Fail2ban</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code>sudo apt install fail2ban -y
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-file-code"></i> /etc/fail2ban/jail.local — Configuration SSH</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Toujours créer jail.local (ne jamais modifier jail.conf directement)</span>
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo nano /etc/fail2ban/jail.local</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-file-code"></i> jail.local — Section [sshd]</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code>[DEFAULT]
+# IP jamais bannies (loopback, réseau local)
+ignoreip = 127.0.0.1/8 192.168.1.0/24
+
+# Durée du ban : 1 heure
+bantime  = 3600
+
+# Fenêtre d'observation : 10 minutes
+findtime = 600
+
+# Nombre max de tentatives avant ban
+maxretry = 3
+
+# Backend de détection
+backend  = systemd
+
+[sshd]
+enabled  = true
+port     = 2222          # Notre port SSH personnalisé
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 3             # 3 tentatives échouées → ban immédiat
+bantime  = 86400         # Ban 24h pour SSH (plus sévère)
+findtime = 300           # Fenêtre de 5 minutes</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Commandes de gestion Fail2ban</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># Recharger après modification</span>
+sudo systemctl reload fail2ban
+
+<span class="comment"># Statut général</span>
+sudo fail2ban-client status
+<span class="comment"># → Number of jail: 1
+# → Jail list: sshd</span>
+
+<span class="comment"># Statut détaillé de la jail SSH</span>
+sudo fail2ban-client status sshd
+<span class="comment"># → Status for the jail: sshd
+# |- Filter:  [ Currently failed: 0 ] [ Total failed: 47 ]
+# `- Actions: [ Currently banned: 2 ] [ Total banned: 12 ]</span>
+
+<span class="comment"># Lister les IP bannies</span>
+sudo fail2ban-client get sshd banip
+
+<span class="comment"># Débannir manuellement une IP</span>
+sudo fail2ban-client set sshd unbanip 192.168.1.50
+
+<span class="comment"># Voir les règles iptables actives</span>
+sudo iptables -L f2b-sshd -n --line-numbers</code></pre>
+                    </div>
+                </section>
+
+                <!-- BRUTE-FORCE SIMULATION -->
+                <section id="bruteforce" class="article-section">
+                    <div class="section-label">// 08 — SIMULATION D'ATTAQUE BRUTE-FORCE</div>
+                    <h2>Tester l'efficacité des défenses avec Hydra</h2>
+
+                    <p>
+                        Pour valider que nos contre-mesures fonctionnent, nous simulons une attaque
+                        brute-force avec <strong>Hydra</strong>, l'un des outils de test d'authentification
+                        les plus utilisés en pentest. Cette simulation doit être effectuée
+                        <em>uniquement sur votre propre machine de test</em>.
+                    </p>
+
+                    <div class="warn-box">
+                        <div class="warn-box-icon"><i class="fas fa-skull-crossbones"></i></div>
+                        <div>
+                            <p class="warn-box-title">Usage strictement légal</p>
+                            <p>Utiliser Hydra uniquement sur des systèmes dont vous êtes propriétaire
+                            ou pour lesquels vous avez une autorisation écrite. Toute attaque non autorisée
+                            est un délit pénal.</p>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Attaque brute-force avec Hydra</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># ── Sur la machine ATTAQUANTE ────────────────────────────────</span>
+sudo apt install hydra -y
+
+<span class="comment"># Créer un mini-dictionnaire de test</span>
+cat > wordlist.txt << 'EOF'
+admin
+password
+123456
+root
+toor
+pass
+test
+ubuntu
+EOF
+
+<span class="comment"># Lancer l'attaque brute-force SSH</span>
+hydra -l user -P wordlist.txt ssh://192.168.1.100 -s 2222 -t 4 -V
+<span class="comment"># -l user     : nom d'utilisateur cible
+# -P wordlist : dictionnaire de mots de passe
+# -s 2222     : port SSH personnalisé
+# -t 4        : 4 threads parallèles
+# -V          : mode verbose</span>
+
+<span class="comment"># Alternativement avec Medusa</span>
+medusa -h 192.168.1.100 -u user -P wordlist.txt -M ssh -n 2222 -t 4</code></pre>
+                    </div>
+
+                    <h3>Observation en temps réel côté serveur</h3>
+                    <div class="bf-terminal">
+                        <span class="t-muted"># Surveiller les logs auth en temps réel</span><br>
+                        <span class="t-prompt">root@serveur</span><span class="t-muted">:~#</span> <span class="t-cmd">tail -f /var/log/auth.log</span><br><br>
+                        <span class="t-muted">May 20 21:09:40 serveur sshd[1234]: Failed password for user from 192.168.1.50 port 54321 ssh2</span><br>
+                        <span class="t-fail">May 20 21:09:41 serveur sshd[1234]: Failed password for user from 192.168.1.50 port 54322 ssh2</span><br>
+                        <span class="t-fail">May 20 21:09:42 serveur sshd[1234]: Failed password for user from 192.168.1.50 port 54323 ssh2</span><br>
+                        <span class="t-warn">May 20 21:09:42 serveur fail2ban.filter[5678]: INFO [sshd] Found 192.168.1.50 - 2025-05-20 21:09:42</span><br>
+                        <span class="t-warn">May 20 21:09:42 serveur fail2ban.actions[5678]: WARNING [sshd] Ban 192.168.1.50</span><br>
+                        <span class="t-ban">May 20 21:09:42 serveur kernel: [iptables] f2b-sshd DROP IN=eth0 SRC=192.168.1.50 DST=192.168.1.100</span>
+                    </div>
+
+                    <div class="bf-terminal">
+                        <span class="t-muted"># Côté attaquant : Hydra bloqué immédiatement</span><br>
+                        <span class="t-prompt">attacker</span><span class="t-muted">:~$</span> <span class="t-cmd">hydra -l user -P wordlist.txt ssh://192.168.1.100 -s 2222 -t 4 -V</span><br>
+                        <span class="t-muted">[DATA] attacking ssh://192.168.1.100:2222/</span><br>
+                        <span class="t-fail">[2222][ssh] host: 192.168.1.100  login: user  password: admin  → FAILED</span><br>
+                        <span class="t-fail">[2222][ssh] host: 192.168.1.100  login: user  password: password → FAILED</span><br>
+                        <span class="t-fail">[2222][ssh] host: 192.168.1.100  login: user  password: 123456  → FAILED</span><br>
+                        <span class="t-ban">[ERROR] could not connect to 192.168.1.100:2222 - Connection refused</span><br>
+                        <span class="t-ban">[ERROR] could not connect to 192.168.1.100:2222 - Connection refused</span><br>
+                        <span class="t-ok">→ IP bannée après 3 tentatives. Hydra ne peut plus se connecter.</span>
+                    </div>
+                </section>
+
+                <!-- VERIFICATION -->
+                <section id="verification" class="article-section">
+                    <div class="section-label">// 09 — VÉRIFICATION COMPLÈTE DE LA SÉCURISATION</div>
+                    <h2>Audit post-durcissement</h2>
+
+                    <p>
+                        Après application de toutes les mesures, on vérifie l'état global
+                        du système avec plusieurs outils d'audit.
+                    </p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-lang"><i class="fas fa-terminal"></i> bash — Audit complet post-hardening</span>
+                            <button class="code-copy" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copier</button>
+                        </div>
+                        <pre><code><span class="comment"># ── 1. Scan Nmap externe (point de vue attaquant) ──────────────</span>
+nmap -sV -sC -p 2222 192.168.1.100
+<span class="comment"># Port 22 → filtered (port knocking actif, invisible)
+# Port 2222 → filtered (si knocking pas fait)</span>
+
+<span class="comment"># ── 2. Vérifier la configuration SSH active ────────────────────</span>
+sudo sshd -T | grep -E "port|permitroot|passwordauth|maxauthtries|pubkeyauth"
+<span class="comment"># port 2222
+# permitrootlogin no
+# passwordauthentication no
+# maxauthtries 3
+# pubkeyauthentication yes</span>
+
+<span class="comment"># ── 3. Vérifier Fail2ban ───────────────────────────────────────</span>
+sudo fail2ban-client status sshd
+sudo iptables -L f2b-sshd -n
+
+<span class="comment"># ── 4. Tester la connexion légitime ────────────────────────────</span>
+knock -v 192.168.1.100 7000 8000 9000
+ssh -i ~/.ssh/id_ed25519 -p 2222 user@192.168.1.100
+<span class="comment"># → Saisir passphrase clé
+# → Saisir code TOTP
+# → Welcome ✓</span>
+
+<span class="comment"># ── 5. Vérifier les logs d'audit ────────────────────────────────</span>
+sudo journalctl -u sshd --since "1 hour ago" | grep -i "accepted\|failed\|invalid"
+
+<span class="comment"># ── 6. ssh-audit (outil dédié à l'audit SSH) ──────────────────</span>
+pip3 install ssh-audit
+ssh-audit 192.168.1.100 -p 2222
+<span class="comment"># → Vérifie les algorithmes, ciphers, MACs recommandés</span></code></pre>
+                    </div>
+
+                    <h3>Récapitulatif des mesures appliquées</h3>
+                    <div class="takeaways">
+                        <h3><i class="fas fa-check-circle"></i> &nbsp;CHECKLIST SÉCURISATION SSH</h3>
+                        <ul class="article-list checklist">
+                            <li><strong>Port modifié</strong> : 22 → 2222 — réduit le bruit des scanners automatiques.</li>
+                            <li><strong>Root désactivé</strong> : <code>PermitRootLogin no</code> — force sudo pour l'élévation.</li>
+                            <li><strong>Mots de passe désactivés</strong> : <code>PasswordAuthentication no</code> — clés uniquement.</li>
+                            <li><strong>Clés ED25519</strong> : algorithme moderne, 256 bits, signatures rapides.</li>
+                            <li><strong>MaxAuthTries 3</strong> : seulement 3 tentatives par connexion TCP.</li>
+                            <li><strong>Port Knocking</strong> : séquence 7000→8000→9000 pour ouvrir le port SSH.</li>
+                            <li><strong>2FA TOTP</strong> : second facteur obligatoire via Google Authenticator.</li>
+                            <li><strong>Fail2ban</strong> : ban automatique 24h après 3 échecs en 5 minutes.</li>
+                            <li><strong>Sessions inactives</strong> : déconnexion après 10 minutes sans activité.</li>
+                            <li><strong>X11/TCP Forwarding</strong> : désactivés — surface d'attaque réduite.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- CONCLUSION -->
+                <section id="conclusion" class="article-section">
+                    <div class="section-label">// 10 — CONCLUSION</div>
+                    <h2>Défense en profondeur : chaque couche compte</h2>
+
+                    <p>
+                        Ce projet illustre le principe de <strong>défense en profondeur</strong> (<em>Defense in Depth</em>) :
+                        aucune mesure seule n'est suffisante, mais leur combinaison crée des barrières
+                        successives qui rendent l'intrusion exponentiellement plus difficile.
+                    </p>
+
+                    <p>
+                        Un attaquant face à notre infrastructure doit contourner : le port knocking
+                        (port invisible), les clés cryptographiques (brute-force impossible sur ED25519),
+                        le TOTP (même avec la clé volée), et Fail2ban (bannissement immédiat dès 3 tentatives).
+                        La combinaison de ces couches rend l'accès non autorisé pratiquement infaisable
+                        dans un délai raisonnable.
+                    </p>
+
+                    <div class="next-steps">
+                        <div class="ns-card">
+                            <i class="fas fa-chart-bar"></i>
+                            <h4>SIEM</h4>
+                            <p>Centraliser les logs SSH dans un SIEM (Wazuh, ELK) pour la détection d'anomalies avancée.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-network-wired"></i>
+                            <h4>VPN + SSH</h4>
+                            <p>Ajouter une couche VPN (WireGuard) : SSH uniquement accessible depuis le VPN.</p>
+                        </div>
+                        <div class="ns-card">
+                            <i class="fas fa-robot"></i>
+                            <h4>Honeypot</h4>
+                            <p>Déployer un honeypot SSH (Cowrie) pour capturer et analyser les attaques réelles.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOTTOM NAV -->
+                <div class="article-nav-bottom">
+                    <a href="articles.html" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Retour aux articles
+                    </a>
+                    <div class="share-buttons">
+                        <span class="share-label">Partager :</span>
+                        <a class="share-btn linkedin" href="https://www.linkedin.com/sharing/share-offsite/?url=ssh_hardening.html" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="share-btn github" href="https://github.com/baali-lhoussaine" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+            </article>
+
+            <!-- ========== SIDEBAR ========== -->
+            <aside class="article-sidebar">
+
+                <div class="sidebar-card sidebar-author">
+                    <p class="sidebar-card-title">// AUTEUR</p>
+                    <div class="sa-avatar">BL</div>
+                    <p class="sa-name">BAALI LHOUSSAINE</p>
+                    <p class="sa-role">Master Cryptologie &amp;<br>Sécurité Informatique</p>
+                    <div class="sa-links">
+                        <a href="https://github.com/baali-lhoussaine" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="https://linkedin.com" target="_blank"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// NIVEAU</p>
+                    <div class="level-bar-wrap">
+                        <span class="level-label">Administration Linux</span>
+                        <div class="level-bar"><div class="level-fill" style="width:85%"></div></div>
+                        <span class="level-label">Sécurité réseau</span>
+                        <div class="level-bar"><div class="level-fill" style="width:80%"></div></div>
+                        <span class="level-label">Cryptographie SSH</span>
+                        <div class="level-bar"><div class="level-fill" style="width:75%"></div></div>
+                    </div>
+                    <span class="level-badge">Intermédiaire — Bac+3/4</span>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// STACK</p>
+                    <div class="sidebar-tech-list">
+                        <span class="tech">OpenSSH</span>
+                        <span class="tech">Fail2ban</span>
+                        <span class="tech">knockd</span>
+                        <span class="tech">iptables</span>
+                        <span class="tech">Google Auth PAM</span>
+                        <span class="tech">Hydra</span>
+                        <span class="tech">Nmap</span>
+                        <span class="tech">Ubuntu 22.04</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">// SOURCES</p>
+                    <ul class="sidebar-sources">
+                        <li><a href="https://man.openbsd.org/sshd_config" target="_blank"><i class="fas fa-external-link-alt"></i> sshd_config man page</a></li>
+                        <li><a href="https://www.fail2ban.org/wiki/index.php/MANUAL_0_8" target="_blank"><i class="fas fa-external-link-alt"></i> Fail2ban Manual</a></li>
+                        <li><a href="https://github.com/jtesta/ssh-audit" target="_blank"><i class="fas fa-external-link-alt"></i> ssh-audit (GitHub)</a></li>
+                        <li><a href="https://wiki.archlinux.org/title/Port_knocking" target="_blank"><i class="fas fa-external-link-alt"></i> ArchWiki — Port Knocking</a></li>
+                        <li><a href="https://github.com/google/google-authenticator-libpam" target="_blank"><i class="fas fa-external-link-alt"></i> Google Auth PAM</a></li>
+                    </ul>
+                </div>
+
+                <!-- Hardening score -->
+                <div class="sidebar-card" style="border-color:rgba(0,255,106,0.2)">
+                    <p class="sidebar-card-title">// SCORE DE DURCISSEMENT</p>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem">
+                        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.72rem">
+                            <span style="color:var(--text-muted)">Avant hardening</span>
+                            <span style="color:#ef4444;font-weight:700">2/10</span>
+                        </div>
+                        <div class="level-bar"><div class="level-fill" style="width:20%;background:#ef4444"></div></div>
+                        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.72rem;margin-top:0.3rem">
+                            <span style="color:var(--text-muted)">Après hardening</span>
+                            <span style="color:var(--green-primary);font-weight:700">9/10</span>
+                        </div>
+                        <div class="level-bar"><div class="level-fill" style="width:90%"></div></div>
+                    </div>
+                </div>
+
+            </aside>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <p class="footer-copy">© 2025 BAALI LHOUSSAINE — <span style="color:var(--green-primary)">cryptologie &amp; sécurité</span></p>
+        </div>
+    </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Matrix canvas
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        const chars = '01ABCDEF0123456789{}[]|+=/*%#@!?<>~^&';
+        const fs = 13; let cols = Math.floor(canvas.width / fs);
+        let drops = Array(cols).fill(1);
+        function draw() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            ctx.fillStyle = isLight ? 'rgba(244,247,245,0.05)' : 'rgba(2,12,7,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fs + 'px Share Tech Mono,monospace';
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillStyle = isLight
+                    ? (Math.random() > 0.97 ? '#0077aa' : '#007a33')
+                    : (Math.random() > 0.97 ? '#00e5ff' : '#00ff6a');
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, drops[i] * fs);
+                if (drops[i] * fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 55);
+        window.addEventListener('resize', () => { cols = Math.floor(canvas.width / fs); drops = Array(cols).fill(1); });
+    })();
+
+    // Scroll progress
+    const sp = document.getElementById('scrollProgress');
+    const rp = document.getElementById('readingProgress');
+    window.addEventListener('scroll', () => {
+        const t = window.pageYOffset, d = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = (t / d * 100) + '%';
+        if (sp) sp.style.width = pct;
+        if (rp) rp.style.width = pct;
+    });
+
+    // Mobile nav
+    const ham = document.querySelector('.hamburger');
+    const nav = document.querySelector('.nav-menu');
+    if (ham && nav) ham.addEventListener('click', () => { ham.classList.toggle('active'); nav.classList.toggle('active'); });
+
+    // Theme
+    const tt = document.getElementById('themeToggle');
+    const ti = document.getElementById('themeIcon');
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+    if (tt) tt.addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        applyTheme(next); localStorage.setItem('theme', next);
+    });
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        if (ti) ti.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Active TOC
+    const sections = document.querySelectorAll('.article-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+    window.addEventListener('scroll', () => {
+        let cur = '';
+        sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) cur = s.id; });
+        tocLinks.forEach(l => {
+            l.classList.remove('active');
+            if (l.getAttribute('href') === '#' + cur) l.classList.add('active');
+        });
+    });
+
+    // Fade in
+    const obs = new IntersectionObserver(e => e.forEach(en => {
+        if (en.isIntersecting) en.target.classList.add('fade-in-up');
+    }), { threshold: 0.06 });
+    document.querySelectorAll('.article-section, .ssh-layer-card, .f2b-step, .ns-card').forEach(el => obs.observe(el));
+});
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copié !';
+        btn.style.color = 'var(--green-primary)';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copier'; btn.style.color = ''; }, 2000);
+    });
+}
+</script>
+</body>
+</html>
